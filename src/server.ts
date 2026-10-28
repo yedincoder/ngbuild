@@ -3,7 +3,7 @@ import { readFile, realpath, stat, watch } from 'node:fs/promises';
 import { resolve, relative, sep, extname, isAbsolute } from 'node:path';
 import { build, type Loader } from 'esbuild';
 
-const VERSION = '0.4.0';
+const VERSION = '0.5.0';
 
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',

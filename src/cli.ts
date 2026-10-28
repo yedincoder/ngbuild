@@ -1,6 +1,8 @@
-
 import { resolve } from 'node:path';
 import { startServer } from './server.js';
+import { buildProject } from './build.js';
+
+const VERSION = '0.5.0';
 
 const args = process.argv.slice(2);
 
@@ -48,21 +50,47 @@ switch (command) {
     await startServer(root, port);
     break;
 
+  case 'build':
+    if (portIndex !== -1) {
+      console.error('NgBuild: --port is only supported by dev.');
+      process.exitCode = 1;
+      break;
+    }
+
+    try {
+      await buildProject(root);
+    } catch (error) {
+      const err = error as Error;
+      console.error('[NgBuild] Build failed:', err.message);
+      process.exitCode = 1;
+    }
+    break;
+
   case '--version':
   case '-v':
-    console.log('NgBuild v0.2.0');
+    console.log(`NgBuild v${VERSION}`);
     break;
 
   case '--help':
   case '-h':
     console.log(`
-NgBuild v0.2.0
+NgBuild v${VERSION}
 
 Usage:
   ngbuild dev [root]
   ngbuild dev [root] --port 4178
+  ngbuild build [root]
   ngbuild --version
   ngbuild --help
+
+Commands:
+  dev      Start development server
+  build    Create optimized production output
+
+Options:
+  --port   Development server port (default: 4178)
+  --version, -v
+  --help, -h
 `);
     break;
 

@@ -2,34 +2,39 @@
 
 **A lightweight frontend development tool built with Node.js and TypeScript.**
 
-![Version](https://img.shields.io/badge/version-0.4.0-orange)
+![Version](https://img.shields.io/badge/version-0.5.0-orange)
 ![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20-green)
 ![TypeScript](https://img.shields.io/badge/TypeScript-supported-blue)
 ![React](https://img.shields.io/badge/React-supported-61DAFB)
 ![Status](https://img.shields.io/badge/status-early%20development-yellow)
 
-NgBuild adalah frontend development tool independen berbasis Node.js dan TypeScript untuk menjalankan aplikasi web menggunakan native ES Modules, TypeScript, JSX, dan TSX tanpa bergantung pada Vite.
+NgBuild adalah frontend development tool independen berbasis Node.js dan TypeScript untuk mengembangkan dan membangun aplikasi web menggunakan native ES Modules, TypeScript, JSX, dan TSX tanpa bergantung pada Vite.
 
-NgBuild memiliki CLI, HTTP Development Server, File Watcher, Auto Reload, CSS Hot Update, dan transformer berbasis esbuild untuk pengembangan aplikasi frontend, termasuk React.
+NgBuild menyediakan CLI, HTTP Development Server, File Watcher, Auto Reload, CSS Hot Update, TypeScript/JSX/TSX Transformer, React Support, serta Production Bundler berbasis esbuild.
 
-> **Development Status:** NgBuild masih dalam tahap awal pengembangan. CSS Hot Update sudah tersedia, sedangkan JavaScript HMR, React Fast Refresh, production bundling, dan plugin system masih dalam pengembangan.
+> **Development Status:** NgBuild masih dalam tahap awal pengembangan. Production Build dasar sudah tersedia, sedangkan JavaScript HMR, React Fast Refresh, dan Plugin System belum diimplementasikan.
 
 ## Features
 
-Fitur yang sudah diimplementasikan pada NgBuild v0.4.0:
+Fitur NgBuild v0.5.0:
 
-- **CLI** — Menjalankan development server melalui terminal.
+- **CLI** — Menjalankan perintah development dan production build.
 - **Development Server** — HTTP server berbasis Node.js.
-- **Native ES Modules** — Mendukung modul JavaScript native browser.
+- **Native ES Modules** — Mendukung JavaScript ES Modules native browser.
 - **TypeScript Transformer** — Mengubah `.ts` menjadi JavaScript.
 - **JSX/TSX Transformer** — Memproses `.jsx` dan `.tsx`.
 - **React Support** — Menjalankan aplikasi React dengan React DOM.
-- **esbuild Integration** — Transformasi dan bundling modul entry selama development.
+- **esbuild Integration** — Transformasi dan bundling modul frontend.
 - **File Watcher** — Memantau perubahan file project.
-- **Auto Reload** — Refresh browser otomatis melalui Server-Sent Events (SSE).
+- **Auto Reload** — Refresh browser melalui Server-Sent Events (SSE).
 - **CSS Hot Update** — Memperbarui stylesheet tanpa full-page reload.
+- **Production Build** — Menghasilkan output frontend ke folder `dist/`.
+- **JavaScript Bundling** — Membundel entry JavaScript, TypeScript, JSX, dan TSX.
+- **JavaScript Minification** — Meminifikasi JavaScript hasil bundling.
+- **CSS Minification** — Meminifikasi stylesheet CSS.
+- **HTML Processing** — Memperbarui referensi module script ke hasil build.
 - **Static Asset Serving** — Menyajikan HTML, CSS, JavaScript, JSON, dan gambar.
-- **Custom Port** — Mendukung pengaturan port melalui CLI.
+- **Custom Port** — Mendukung konfigurasi port melalui CLI.
 - **Project Root** — Menentukan direktori aplikasi yang dijalankan.
 
 ## Requirements
@@ -61,7 +66,7 @@ npm run compile
 
 ## Quick Start
 
-Jalankan playground bawaan:
+Jalankan development playground:
 
 ```bash
 npm run playground
@@ -71,10 +76,10 @@ Development server berjalan pada:
 
 **http://localhost:4178**
 
-Contoh output terminal:
+Contoh output:
 
 ```text
-NgBuild v0.4.0
+NgBuild v0.5.0
 
 Local: http://localhost:4178/
 Root:  .../ngbuild/playground
@@ -99,9 +104,11 @@ NgBuild menyediakan dua halaman pengujian.
 | http://localhost:4178/ | Native JavaScript ES Modules |
 | http://localhost:4178/react.html | React + TypeScript + TSX |
 
-Halaman React digunakan untuk menguji transformer, rendering React, interaksi komponen, dan CSS Hot Update.
+Halaman React digunakan untuk menguji transformer, rendering React, interaksi komponen, CSS Hot Update, dan hasil production build.
 
 ## CLI Usage
+
+### Development Server
 
 Menjalankan development server:
 
@@ -109,22 +116,42 @@ Menjalankan development server:
 node bin/ngbuild.js dev playground
 ```
 
-Menampilkan versi:
+Menggunakan custom port:
+
+```bash
+node bin/ngbuild.js dev playground --port 4205
+```
+
+### Production Build
+
+Membangun aplikasi frontend:
+
+```bash
+node bin/ngbuild.js build playground
+```
+
+Output akan dibuat di:
+
+```text
+playground/dist/
+```
+
+### Version
 
 ```bash
 node bin/ngbuild.js --version
 ```
 
-Menampilkan bantuan:
+Output:
+
+```text
+NgBuild v0.5.0
+```
+
+### Help
 
 ```bash
 node bin/ngbuild.js --help
-```
-
-Menggunakan custom port:
-
-```bash
-node bin/ngbuild.js dev playground --port 4205
 ```
 
 ### Global CLI (Development)
@@ -136,20 +163,25 @@ npm run compile
 npm link
 ```
 
-Masuk ke direktori playground:
+Menjalankan development server:
 
 ```bash
-cd playground
-ngbuild dev
+ngbuild dev playground
+```
+
+Menjalankan production build:
+
+```bash
+ngbuild build playground
 ```
 
 Menggunakan custom port:
 
 ```bash
-ngbuild dev --port 4205
+ngbuild dev playground --port 4205
 ```
 
-`npm link` digunakan untuk pengembangan lokal dan tidak memublikasikan package ke npm registry.
+`npm link` digunakan untuk menghubungkan package lokal ke lingkungan pengembangan, bukan untuk memublikasikannya ke npm registry.
 
 ## Default Port
 
@@ -162,8 +194,9 @@ NgBuild menggunakan **4178** sebagai port identitas default.
 | Default URL | `http://localhost:4178` |
 | Custom Port | `--port` |
 | Development Command | `ngbuild dev` |
+| Production Command | `ngbuild build` |
 
-Port dapat diubah tanpa memodifikasi source code.
+Port hanya digunakan oleh development server. Perintah production build tidak memerlukan port.
 
 ## Project Structure
 
@@ -173,14 +206,23 @@ ngbuild/
 │   └── ngbuild.js
 ├── src/
 │   ├── cli.ts
-│   └── server.ts
+│   ├── server.ts
+│   └── build.ts
 ├── playground/
 │   ├── index.html
 │   ├── react.html
 │   ├── main.js
 │   ├── utils.js
 │   ├── app.tsx
-│   └── style.css
+│   ├── style.css
+│   └── dist/
+│       ├── index.html
+│       ├── react.html
+│       ├── main.js
+│       ├── utils.js
+│       ├── app.js
+│       ├── app.tsx
+│       └── style.css
 ├── .gitignore
 ├── package.json
 ├── package-lock.json
@@ -192,8 +234,11 @@ ngbuild/
 |---|---|
 | `bin/` | Entry point CLI NgBuild |
 | `src/` | Source code utama menggunakan TypeScript |
+| `src/server.ts` | Development server, watcher, dan CSS Hot Update |
+| `src/build.ts` | Production builder berbasis esbuild |
 | `playground/` | Aplikasi pengujian JavaScript dan React |
-| `dist/` | Output kompilasi internal TypeScript |
+| `playground/dist/` | Output production build playground |
+| `dist/` | Output kompilasi internal TypeScript NgBuild |
 
 ## Native ES Modules
 
@@ -221,17 +266,17 @@ Import relatif seperti `./utils.js` dapat digunakan langsung oleh browser.
 
 Mulai v0.3.0, NgBuild mendukung transformasi TypeScript, JSX, dan TSX.
 
-| Extension | Support |
-|---|---|
-| `.js` | Native ES Modules |
-| `.mjs` | Native ES Modules |
-| `.ts` | esbuild |
-| `.jsx` | esbuild |
-| `.tsx` | esbuild |
+| Extension | Development | Production |
+|---|---|---|
+| `.js` | Native ES Modules | Bundling entry |
+| `.mjs` | Native ES Modules | Bundling entry |
+| `.ts` | esbuild | esbuild |
+| `.jsx` | esbuild | esbuild |
+| `.tsx` | esbuild | esbuild |
 
-NgBuild menggunakan esbuild untuk mentransformasi dan membundel entry TypeScript/JSX/TSX menjadi JavaScript yang dapat dijalankan browser.
+Selama development, NgBuild menggunakan esbuild untuk mentransformasi dan membundel entry TypeScript/JSX/TSX menjadi JavaScript yang dapat dijalankan browser.
 
-Transformasi berlangsung ketika file entry diminta oleh browser.
+Selama production build, NgBuild membundel module script yang direferensikan oleh HTML.
 
 Type-checking aplikasi secara penuh belum disediakan oleh transformer.
 
@@ -250,7 +295,7 @@ function App() {
 
   return (
     <main>
-      <h1>NgBuild v0.4.0</h1>
+      <h1>NgBuild v0.5.0</h1>
       <p>React + TypeScript + TSX</p>
       <p>Counter: {count}</p>
 
@@ -291,7 +336,7 @@ React dan React DOM harus tersedia dalam dependencies project yang dijalankan.
 
 ## File Watcher & Auto Reload
 
-NgBuild menggunakan File Watcher bawaan Node.js untuk mendeteksi perubahan file project.
+NgBuild menggunakan File Watcher bawaan Node.js untuk mendeteksi perubahan file.
 
 Alur kerja:
 
@@ -311,11 +356,11 @@ Server-Sent Events (SSE)
 Browser Update
 ```
 
-NgBuild menentukan jenis pembaruan berdasarkan file yang berubah.
+NgBuild menentukan jenis pembaruan berdasarkan file yang berubah:
 
 - File `.css` menggunakan CSS Hot Update.
 - File `.js`, `.ts`, `.jsx`, `.tsx`, dan HTML menggunakan full-page reload.
-- File lain menggunakan fallback full-page reload.
+- File lainnya menggunakan fallback full-page reload.
 
 ## CSS Hot Update
 
@@ -337,28 +382,133 @@ Contoh:
 
 Ketika `style.css` disimpan, NgBuild memperbarui stylesheet secara otomatis.
 
-### Keuntungan CSS Hot Update
-
-- Perubahan CSS langsung terlihat.
-- Tidak perlu refresh browser secara manual.
-- State React tetap dipertahankan saat hanya CSS yang berubah.
-- Mengurangi full-page reload selama pengembangan tampilan.
-
 ### CSS Hot Update vs React Fast Refresh
 
-CSS Hot Update tidak sama dengan React Fast Refresh.
-
-| Feature | v0.4.0 |
+| Feature | v0.5.0 |
 |---|---|
 | CSS Hot Update | Supported |
 | Full-page Auto Reload | Supported |
 | TypeScript/JSX/TSX Transform | Supported |
+| Production Build | Supported |
 | JavaScript HMR | Not yet |
 | React Fast Refresh | Not yet |
 | React State Preservation on CSS Change | Supported |
 | React State Preservation on TSX Change | Not yet |
 
 Perubahan TSX masih memicu full-page reload sehingga state React akan di-reset.
+
+## Production Build
+
+Mulai v0.5.0, NgBuild menyediakan perintah production build.
+
+Jalankan:
+
+```bash
+node bin/ngbuild.js build playground
+```
+
+Contoh output:
+
+```text
+NgBuild v0.5.0
+
+Mode: Production
+Root: .../ngbuild/playground
+Out:  .../ngbuild/playground/dist
+
+[NgBuild] Bundled: app.js
+[NgBuild] HTML processed: index.html
+[NgBuild] HTML processed: react.html
+[NgBuild] CSS optimized: style.css
+
+Production build completed.
+
+Output: .../ngbuild/playground/dist
+```
+
+### Production Build Process
+
+```text
+Source Project
+      |
+      v
+HTML Entry Discovery
+      |
+      v
+Module Script Detection
+      |
+      v
+esbuild Bundling
+      |
+      v
+JavaScript Minification
+      |
+      v
+CSS Minification
+      |
+      v
+HTML Script Reference Update
+      |
+      v
+Production Output (dist/)
+```
+
+### Production Build Features
+
+| Feature | Status |
+|---|---|
+| HTML Entry Discovery | Supported |
+| JavaScript Bundling | Supported |
+| TypeScript Bundling | Supported |
+| JSX/TSX Bundling | Supported |
+| React Production Bundling | Supported |
+| JavaScript Minification | Supported |
+| CSS Minification | Supported |
+| HTML Script Reference Update | Supported |
+| Static Asset Copying | Supported |
+| HTML Minification | Not yet |
+| Unused Source File Removal | Not yet |
+| Advanced Asset Optimization | Not yet |
+
+### Production Output
+
+NgBuild membuat direktori `dist/` di dalam project yang dibangun.
+
+Contoh:
+
+```text
+playground/
+├── index.html
+├── react.html
+├── main.js
+├── utils.js
+├── app.tsx
+├── style.css
+└── dist/
+    ├── index.html
+    ├── react.html
+    ├── main.js
+    ├── utils.js
+    ├── app.js
+    ├── app.tsx
+    └── style.css
+```
+
+File sumber yang tidak diperlukan masih dapat ikut tersalin ke output pada v0.5.0.
+
+### Testing Production Output
+
+Setelah build selesai, jalankan:
+
+```bash
+node bin/ngbuild.js dev playground/dist --port 4205
+```
+
+Buka:
+
+**http://localhost:4205/react.html**
+
+Perintah ini menggunakan development server untuk menguji hasil build, bukan menjalankan production server khusus.
 
 ## Development Scripts
 
@@ -368,8 +518,9 @@ Perubahan TSX masih memicu full-page reload sehingga state React akan di-reset.
 | `npm run playground` | Compile dan jalankan playground |
 | `npm run dev` | Compile dan jalankan development server |
 | `npm run build` | Compile source TypeScript internal NgBuild |
+| `ngbuild build [root]` | Production build aplikasi frontend |
 
-Perintah `npm run build` belum menghasilkan production bundle untuk aplikasi frontend.
+**Catatan:** `npm run build` pada repository NgBuild masih digunakan untuk kompilasi internal. Untuk membangun aplikasi frontend, gunakan `ngbuild build`.
 
 ## Roadmap
 
@@ -379,25 +530,26 @@ Perintah `npm run build` belum menghasilkan production bundle untuk aplikasi fro
 | v0.2.0 | File Watcher, Auto Reload & Native ES Modules | Completed |
 | v0.3.0 | TypeScript, JSX/TSX Transformer & React Support | Completed |
 | v0.4.0 | CSS Hot Update & HMR Foundation | Completed |
-| v0.5.0 | Production Bundler & Asset Optimization | Planned |
+| v0.5.0 | Production Bundler & Basic Asset Optimization | Implemented |
 | v0.6.0 | Plugin System | Planned |
 
 Roadmap dapat berubah sesuai hasil pengembangan dan pengujian.
 
 ## Current Limitations
 
-NgBuild v0.4.0 belum mendukung:
+NgBuild v0.5.0 belum mendukung:
 
 - JavaScript Hot Module Replacement.
 - React Fast Refresh.
-- Production bundling aplikasi frontend.
-- Production asset optimization dan minification.
+- HTML minification.
+- Penghapusan otomatis file sumber yang tidak diperlukan dari production output.
+- Advanced asset optimization.
 - Plugin system.
 - Type-checking penuh pada aplikasi.
 - Bare imports pada JavaScript native yang tidak melalui transformer/bundler.
 - Module graph dan incremental transformation seperti pada build tool yang lebih matang.
 
-NgBuild saat ini menggunakan esbuild untuk transformasi entry TypeScript/JSX/TSX, CSS Hot Update untuk stylesheet, dan full-page reload untuk perubahan modul JavaScript/TypeScript.
+NgBuild menggunakan esbuild untuk transformasi TypeScript/JSX/TSX, CSS Hot Update untuk stylesheet selama development, dan production bundling dasar untuk menghasilkan aplikasi frontend.
 
 ## Development
 
@@ -410,6 +562,12 @@ git clone https://github.com/yedincoder/ngbuild.git
 cd ngbuild
 npm install
 npm run playground
+```
+
+Untuk membuat production build:
+
+```bash
+node bin/ngbuild.js build playground
 ```
 
 ## Author
