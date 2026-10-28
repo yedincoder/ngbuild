@@ -1,10 +1,9 @@
-
 import { createServer, type ServerResponse } from 'node:http';
 import { readFile, realpath, stat, watch } from 'node:fs/promises';
 import { resolve, relative, sep, extname, isAbsolute } from 'node:path';
 import { build, type Loader } from 'esbuild';
 
-const VERSION = '0.3.0';
+const VERSION = '0.4.0';
 
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -26,16 +25,39 @@ const TRANSFORM_LOADERS: Record<string, Loader> = {
   '.jsx': 'jsx'
 };
 
-const RELOAD_CLIENT = `
+const HMR_CLIENT = `
 <script type="module">
   const events = new EventSource('/__ngbuild/events');
 
+  events.addEventListener('css-update', (event) => {
+    const changedFile = event.data.replaceAll('\\\\', '/');
+
+    const stylesheets = document.querySelectorAll(
+      'link[rel="stylesheet"]'
+    );
+
+    for (const link of stylesheets) {
+      const url = new URL(link.href);
+
+      if (
+        url.pathname === '/' + changedFile ||
+        url.pathname.endsWith('/' + changedFile)
+      ) {
+        url.searchParams.set('ngbuild', Date.now().toString());
+        link.href = url.toString();
+
+        console.info('[NgBuild] CSS updated:', changedFile);
+      }
+    }
+  });
+
   events.addEventListener('reload', () => {
+    console.info('[NgBuild] Reloading...');
     window.location.reload();
   });
 
   events.addEventListener('open', () => {
-    console.info('[NgBuild] Connected');
+    console.info('[NgBuild] HMR connected');
   });
 </script>
 `;
@@ -55,17 +77,16 @@ function isWithin(root: string, filePath: string): boolean {
 
 function injectClient(html: string): string {
   if (html.includes('</body>')) {
-    return html.replace('</body>', `${RELOAD_CLIENT}</body>`);
+    return html.replace('</body>', `${HMR_CLIENT}</body>`);
   }
 
-  return html + RELOAD_CLIENT;
+  return html + HMR_CLIENT;
 }
 
 async function transformModule(
   filePath: string,
   projectRoot: string
 ): Promise<string> {
-
   const result = await build({
     entryPoints: [filePath],
     absWorkingDir: projectRoot,
@@ -101,13 +122,20 @@ export async function startServer(
   root: string,
   port = 4178
 ): Promise<void> {
-
   const projectRoot = await realpath(root);
   const clients = new Set<ServerResponse>();
 
   function broadcastReload(): void {
     for (const client of clients) {
       client.write('event: reload\ndata: update\n\n');
+    }
+  }
+
+  function broadcastCssUpdate(filename: string): void {
+    const normalized = filename.replace(/\\/g, '/');
+
+    for (const client of clients) {
+      client.write(`event: css-update\ndata: ${normalized}\n\n`);
     }
   }
 
@@ -130,6 +158,11 @@ export async function startServer(
           'Cache-Control': 'no-cache, no-transform',
           'Connection': 'keep-alive'
         });
+
+        if (req.method === 'HEAD') {
+          res.end();
+          return;
+        }
 
         res.write(': connected\n\n');
         clients.add(res);
@@ -183,7 +216,6 @@ export async function startServer(
         console.log(
           `[NgBuild] Transformed: ${relative(projectRoot, actualPath)}`
         );
-
       } else {
         content = await readFile(actualPath);
 
@@ -240,6 +272,7 @@ export async function startServer(
 
   File Watcher: Active
   Auto Reload:  Active
+  CSS Hot Update: Enabled
   ES Modules:   Native
   TypeScript:   Enabled
   JSX / TSX:    Enabled
@@ -291,7 +324,11 @@ export async function startServer(
           `[NgBuild] File changed: ${filename || 'unknown'}`
         );
 
-        broadcastReload();
+        if (filename && extname(filename).toLowerCase() === '.css') {
+          broadcastCssUpdate(filename);
+        } else {
+          broadcastReload();
+        }
       }
 
     } catch (error) {
