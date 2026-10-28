@@ -1,0 +1,32 @@
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: Arial, sans-serif;
+  background: #111827;
+  color: #f9fafb;
+}
+
+#app {
+  width: 100%;
+  max-width: 600px;
+  padding: 32px;
+  border-left: 4px solid #f97316;
+  background: #1f2937;
+}
+
+h1 {
+  margin-top: 0;
+  color: #f97316;
+}
+
+p {
+  line-height: 1.6;
+}

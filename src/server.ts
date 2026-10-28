@@ -1,5 +1,6 @@
-import { createServer } from 'node:http';
-import { readFile, realpath, stat } from 'node:fs/promises';
+
+import { createServer, type ServerResponse } from 'node:http';
+import { readFile, realpath, stat, watch } from 'node:fs/promises';
 import { resolve, relative, sep, extname, isAbsolute } from 'node:path';
 
 const MIME_TYPES: Record<string, string> = {
@@ -16,6 +17,20 @@ const MIME_TYPES: Record<string, string> = {
   '.ico': 'image/x-icon'
 };
 
+const RELOAD_CLIENT = `
+<script type="module">
+  const events = new EventSource('/__ngbuild/events');
+
+  events.addEventListener('reload', () => {
+    window.location.reload();
+  });
+
+  events.addEventListener('open', () => {
+    console.info('[NgBuild] Connected');
+  });
+</script>
+`;
+
 function isWithin(root: string, filePath: string): boolean {
   const rel = relative(root, filePath);
 
@@ -29,8 +44,27 @@ function isWithin(root: string, filePath: string): boolean {
   );
 }
 
-export async function startServer(root: string, port = 4178): Promise<void> {
+function injectClient(html: string): string {
+  if (html.includes('</body>')) {
+    return html.replace('</body>', `${RELOAD_CLIENT}</body>`);
+  }
+
+  return html + RELOAD_CLIENT;
+}
+
+export async function startServer(
+  root: string,
+  port = 4178
+): Promise<void> {
+
   const projectRoot = await realpath(root);
+  const clients = new Set<ServerResponse>();
+
+  function broadcastReload(): void {
+    for (const client of clients) {
+      client.write('event: reload\ndata: update\n\n');
+    }
+  }
 
   const server = createServer(async (req, res) => {
     try {
@@ -40,8 +74,36 @@ export async function startServer(root: string, port = 4178): Promise<void> {
         return;
       }
 
-      const pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
+      const pathname = new URL(
+        req.url ?? '/',
+        'http://localhost'
+      ).pathname;
+
+      if (pathname === '/__ngbuild/events') {
+        if (req.method !== 'GET') {
+          res.writeHead(405);
+          res.end('Method Not Allowed');
+          return;
+        }
+
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache, no-transform',
+          'Connection': 'keep-alive'
+        });
+
+        res.write(': connected\n\n');
+        clients.add(res);
+
+        res.on('close', () => {
+          clients.delete(res);
+        });
+
+        return;
+      }
+
       const decoded = decodeURIComponent(pathname);
+
       const filename = decoded.endsWith('/')
         ? `${decoded}index.html`
         : decoded;
@@ -70,10 +132,15 @@ export async function startServer(root: string, port = 4178): Promise<void> {
         return;
       }
 
-      const content = await readFile(actualPath);
+      const extension = extname(actualPath).toLowerCase();
       const contentType =
-        MIME_TYPES[extname(actualPath)] ??
-        'application/octet-stream';
+        MIME_TYPES[extension] ?? 'application/octet-stream';
+
+      let content: string | Buffer = await readFile(actualPath);
+
+      if (extension === '.html') {
+        content = injectClient(content.toString('utf-8'));
+      }
 
       res.writeHead(200, {
         'Content-Type': contentType,
@@ -110,12 +177,67 @@ export async function startServer(root: string, port = 4178): Promise<void> {
 
   server.listen(port, '127.0.0.1', () => {
     console.log(`
-  NgBuild v0.1.0
+  NgBuild v0.2.0
 
   Local: http://localhost:${port}/
   Root:  ${projectRoot}
 
+  File Watcher: Active
+  Auto Reload:  Active
+  ES Modules:   Native
+
   Press Ctrl+C to stop.
 `);
   });
+
+  const heartbeat = setInterval(() => {
+    for (const client of clients) {
+      client.write(': heartbeat\n\n');
+    }
+  }, 15000);
+
+  server.on('close', () => {
+    clearInterval(heartbeat);
+
+    for (const client of clients) {
+      client.end();
+    }
+
+    clients.clear();
+  });
+
+  async function startWatcher(): Promise<void> {
+    try {
+      const watcher = watch(projectRoot, {
+        recursive: true
+      });
+
+      server.on('close', () => {
+          void watcher.return?.();
+      });
+
+      for await (const event of watcher) {
+        const filename = event.filename?.toString() ?? '';
+
+        if (
+          filename.includes('node_modules') ||
+          filename.includes('.git')
+        ) {
+          continue;
+        }
+
+        console.log(
+          `[NgBuild] File changed: ${filename || 'unknown'}`
+        );
+
+        broadcastReload();
+      }
+
+    } catch (error) {
+      const err = error as Error;
+      console.error('[NgBuild] Watcher error:', err.message);
+    }
+  }
+
+  void startWatcher();
 }
