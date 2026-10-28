@@ -1,3 +1,3 @@
 export function getMessage() {
-  return 'ES Modules berhasil dijalankan!';
+  return 'NgBuild Auto Reload berhasil!';
 }
