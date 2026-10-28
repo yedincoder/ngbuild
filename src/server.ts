@@ -2,6 +2,9 @@
 import { createServer, type ServerResponse } from 'node:http';
 import { readFile, realpath, stat, watch } from 'node:fs/promises';
 import { resolve, relative, sep, extname, isAbsolute } from 'node:path';
+import { build, type Loader } from 'esbuild';
+
+const VERSION = '0.3.0';
 
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -15,6 +18,12 @@ const MIME_TYPES: Record<string, string> = {
   '.jpeg': 'image/jpeg',
   '.webp': 'image/webp',
   '.ico': 'image/x-icon'
+};
+
+const TRANSFORM_LOADERS: Record<string, Loader> = {
+  '.ts': 'ts',
+  '.tsx': 'tsx',
+  '.jsx': 'jsx'
 };
 
 const RELOAD_CLIENT = `
@@ -52,6 +61,42 @@ function injectClient(html: string): string {
   return html + RELOAD_CLIENT;
 }
 
+async function transformModule(
+  filePath: string,
+  projectRoot: string
+): Promise<string> {
+
+  const result = await build({
+    entryPoints: [filePath],
+    absWorkingDir: projectRoot,
+    outdir: 'out',
+    bundle: true,
+    write: false,
+    platform: 'browser',
+    format: 'esm',
+    target: 'es2022',
+    jsx: 'automatic',
+    sourcemap: 'inline',
+    logLevel: 'silent',
+    loader: {
+      '.ts': 'ts',
+      '.tsx': 'tsx',
+      '.jsx': 'jsx',
+      '.js': 'js'
+    }
+  });
+
+  const output = result.outputFiles?.find(
+    file => file.path.endsWith('.js')
+  );
+
+  if (!output) {
+    throw new Error('NgBuild: JavaScript output not found.');
+  }
+
+  return output.text;
+}
+
 export async function startServer(
   root: string,
   port = 4178
@@ -80,12 +125,6 @@ export async function startServer(
       ).pathname;
 
       if (pathname === '/__ngbuild/events') {
-        if (req.method !== 'GET') {
-          res.writeHead(405);
-          res.end('Method Not Allowed');
-          return;
-        }
-
         res.writeHead(200, {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache, no-transform',
@@ -133,13 +172,28 @@ export async function startServer(
       }
 
       const extension = extname(actualPath).toLowerCase();
-      const contentType =
-        MIME_TYPES[extension] ?? 'application/octet-stream';
 
-      let content: string | Buffer = await readFile(actualPath);
+      let content: string | Buffer;
+      let contentType: string;
 
-      if (extension === '.html') {
-        content = injectClient(content.toString('utf-8'));
+      if (TRANSFORM_LOADERS[extension]) {
+        content = await transformModule(actualPath, projectRoot);
+        contentType = 'text/javascript; charset=utf-8';
+
+        console.log(
+          `[NgBuild] Transformed: ${relative(projectRoot, actualPath)}`
+        );
+
+      } else {
+        content = await readFile(actualPath);
+
+        contentType =
+          MIME_TYPES[extension] ??
+          'application/octet-stream';
+
+        if (extension === '.html') {
+          content = injectClient(content.toString('utf-8'));
+        }
       }
 
       res.writeHead(200, {
@@ -159,6 +213,8 @@ export async function startServer(
             ? 400
             : 500;
 
+      console.error('[NgBuild] Request error:', err.message);
+
       res.writeHead(status);
 
       res.end(
@@ -177,7 +233,7 @@ export async function startServer(
 
   server.listen(port, '127.0.0.1', () => {
     console.log(`
-  NgBuild v0.2.0
+  NgBuild v${VERSION}
 
   Local: http://localhost:${port}/
   Root:  ${projectRoot}
@@ -185,6 +241,9 @@ export async function startServer(
   File Watcher: Active
   Auto Reload:  Active
   ES Modules:   Native
+  TypeScript:   Enabled
+  JSX / TSX:    Enabled
+  React:        Supported
 
   Press Ctrl+C to stop.
 `);
@@ -213,15 +272,17 @@ export async function startServer(
       });
 
       server.on('close', () => {
-          void watcher.return?.();
+        void watcher.return?.();
       });
 
       for await (const event of watcher) {
         const filename = event.filename?.toString() ?? '';
 
+        const segments = filename.split(/[\\/]/);
+
         if (
-          filename.includes('node_modules') ||
-          filename.includes('.git')
+          segments.includes('node_modules') ||
+          segments.includes('.git')
         ) {
           continue;
         }
