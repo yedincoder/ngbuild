@@ -1,16 +1,18 @@
 # NgBuild
 
-[![npm](https://img.shields.io/npm/v/@yedincoder/ngbuild)](https://www.npmjs.com/package/@yedincoder/ngbuild)
-![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20-green)
-![TypeScript](https://img.shields.io/badge/TypeScript-supported-blue)
-![React](https://img.shields.io/badge/React-supported-61DAFB)
-![License](https://img.shields.io/badge/status-stable-brightgreen)
+[![npm Version](https://img.shields.io/npm/v/@yedincoder/ngbuild?logo=npm)](https://www.npmjs.com/package/@yedincoder/ngbuild)
+[![npm Downloads](https://img.shields.io/npm/dm/@yedincoder/ngbuild?logo=npm)](https://www.npmjs.com/package/@yedincoder/ngbuild)
+[![License](https://img.shields.io/npm/l/@yedincoder/ngbuild)](https://www.npmjs.com/package/@yedincoder/ngbuild)
+[![Node.js](https://img.shields.io/badge/Node.js-Supported-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Supported-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-**A lightweight frontend development and build tool built with Node.js, TypeScript, and esbuild.**
+**Modern JavaScript & TypeScript Build Tool**
+
+Development Server, Hot Module Replacement, Plugin System, and Production Build.
 
 NgBuild provides a development server, native ES Modules, TypeScript/JSX/TSX support, file watching, hot updates, React Fast Refresh, a plugin system, and optimized production builds.
 
-> **Current npm release:** `@yedincoder/ngbuild` (v1.0.2). The commands below use the npm `latest` release without pinning a version.
+> **Current npm release:** `@yedincoder/ngbuild`. The commands below use the npm `latest` release without pinning a version.
 
 ## Requirements
 
@@ -209,18 +211,34 @@ NgBuild supports project plugins through the existing plugin loader, including c
 - **CLI executable:** `ngbuild`
 - **Node.js:** `>=20`
 
-## Changelog
+## NgBuild Ecosystem
 
-### v1.0.2
+NgBuild memiliki dua komponen yang berbeda:
 
-- Use the original packaged `assets/favicon.ico` when initializing a project; remove generated favicon artwork.
-- Preserve an existing `public/favicon.ico`.
-- Keep the existing project-root behavior and all development/build features.
+- **NgBuild Framework** — package `@yedincoder/ngbuildframework`, framework modular untuk Web, API, dan Mobile. Versi lokal yang diuji: `1.0.0`. Belum dipublikasikan ke npm.
+- **NgBuild Build Tool & CLI** — package `@yedincoder/ngbuild`, build tool terpisah. Versi yang diuji: `1.0.2`.
 
-### v1.0.1
+Integrasi CLI, package exports, dan starter templates sudah melalui pengujian otomatis. Publikasi dan release terpisah dari penyelesaian fondasi.
 
-- Added `ngbuild init` to generate a framework-neutral starter project.
-- Starter application files are stored in `src/`.
-- Static assets, including the project favicon, are stored in `public/`.
-- Production output remains in the top-level `dist/` directory.
-- Development and build commands support the new layout while preserving existing root-level HTML projects.
+## Author
+
+**YedinCoder**
+
+NgBuild
+
+## License
+
+NgBuild Framework is open-source software licensed under the
+Apache License, Version 2.0.
+
+Copyright © 2026 YedinCoder.
+
+See [LICENSE](LICENSE) for the full license terms.
+
+---
+
+**NgBuild **
+
+**Modern JavaScript & TypeScript Build Tool.**
+
+Built by YedinCoder.
