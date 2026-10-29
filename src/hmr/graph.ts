@@ -1,3 +1,4 @@
+
 import { relative, resolve } from 'node:path';
 
 export interface ModuleNode {
@@ -64,6 +65,87 @@ export class ModuleGraph {
 
   isHmrAccepted(id: string): boolean {
     return this.getModule(id)?.selfAccepting ?? false;
+  }
+
+  getHmrBoundaries(id: string): string[] {
+    const boundaries = new Set<string>();
+    const visited = new Set<string>();
+
+    const visit = (moduleId: string): void => {
+      const normalized = this.normalize(moduleId);
+
+      if (visited.has(normalized)) {
+        return;
+      }
+
+      visited.add(normalized);
+
+      const node = this.modules.get(normalized);
+
+      if (!node) {
+        return;
+      }
+
+      if (node.selfAccepting) {
+        boundaries.add(node.id);
+        return;
+      }
+
+      for (const importer of node.importers) {
+        visit(importer);
+      }
+    };
+
+    visit(id);
+
+    return [...boundaries];
+  }
+
+  getHmrPropagation(id: string): {
+    boundaries: string[];
+    accepted: boolean;
+  } {
+    const boundaries = new Set<string>();
+    const visited = new Set<string>();
+    let accepted = true;
+
+    const visit = (moduleId: string): void => {
+      const normalized = this.normalize(moduleId);
+
+      if (visited.has(normalized)) {
+        return;
+      }
+
+      visited.add(normalized);
+
+      const node = this.modules.get(normalized);
+
+      if (!node) {
+        accepted = false;
+        return;
+      }
+
+      if (node.selfAccepting) {
+        boundaries.add(node.id);
+        return;
+      }
+
+      if (node.importers.size === 0) {
+        accepted = false;
+        return;
+      }
+
+      for (const importer of node.importers) {
+        visit(importer);
+      }
+    };
+
+    visit(id);
+
+    return {
+      boundaries: [...boundaries],
+      accepted: accepted && boundaries.size > 0
+    };
   }
 
   toBrowserPath(id: string): string {

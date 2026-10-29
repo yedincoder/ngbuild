@@ -1,28 +1,38 @@
+
 {
   "name": "ngbuild",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Modern frontend development and build tool",
   "type": "module",
   "bin": {
     "ngbuild": "./bin/ngbuild.js"
   },
+  "files": [
+    "bin/",
+    "dist/"
+  ],
   "scripts": {
     "dev": "npm run compile && node bin/ngbuild.js dev",
     "compile": "tsc",
     "build": "tsc",
-    "playground": "npm run compile && node bin/ngbuild.js dev playground"
+    "playground": "npm run compile && node bin/ngbuild.js dev playground",
+    "prepack": "npm run compile"
   },
   "engines": {
     "node": ">=20"
   },
-  "devDependencies": {
+  "dependencies": {
     "@babel/core": "^8.0.9",
-    "@types/babel__core": "^7.20.5",
-    "@types/node": "^22.0.0",
     "esbuild": "^0.28.2",
+    "html-minifier-terser": "^7.2.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "react-refresh": "^0.18.0",
+    "react-refresh": "^0.18.0"
+  },
+  "devDependencies": {
+    "@types/babel__core": "^7.20.5",
+    "@types/html-minifier-terser": "^7.0.2",
+    "@types/node": "^22.0.0",
     "typescript": "^5.0.0"
   }
 }

@@ -180,15 +180,41 @@ function injectClient(html: string): string {
 
   return HMR_RUNTIME + html;
 }
+function injectHotContext(
+  code: string,
+  browserPath: string,
+  updateVersion?: string
+): string {
+  let transformed = code;
 
-function injectHotContext(code: string, browserPath: string): string {
+  if (updateVersion) {
+    const importPattern =
+      /(\b(?:import|export)\s+(?:[^'"]*?\s+from\s*)?['"])(\.[^'"]+)(['"])/g;
+
+    transformed = transformed.replace(
+      importPattern,
+      (_match, prefix: string, specifier: string, suffix: string) => {
+        const separator = specifier.includes('?') ? '&' : '?';
+
+        return (
+          prefix +
+          specifier +
+          separator +
+          'ngbuild=' +
+          encodeURIComponent(updateVersion) +
+          suffix
+        );
+      }
+    );
+  }
+
   const prefix = `
 import.meta.hot = window.__ngbuild_hot?.createContext(
   ${JSON.stringify(browserPath)}
 );
 `;
 
-  return prefix + code;
+  return prefix + transformed;
 }
 
 function getDependencies(
@@ -461,9 +487,15 @@ export async function startServer(
           selfAccepting
         );
 
+        const updateVersion = new URL(
+          req.url ?? '/',
+          'http://localhost'
+        ).searchParams.get('ngbuild');
+
         content = injectHotContext(
           transformed,
-          browserPath
+          browserPath,
+          updateVersion ?? undefined
         );
 
         contentType = 'text/javascript; charset=utf-8';
@@ -609,8 +641,21 @@ export async function startServer(
           extension === '.js' ||
           extension === '.mjs'
         ) {
-          if (graph.isHmrAccepted(changedPath)) {
-            broadcastJsUpdate(changedPath);
+          const propagation = graph.getHmrPropagation(
+            changedPath
+          );
+
+          if (propagation.accepted) {
+            for (const boundary of propagation.boundaries) {
+              broadcastJsUpdate(boundary);
+
+              console.log(
+                '[NgBuild] HMR propagated:',
+                graph.toBrowserPath(changedPath),
+                '->',
+                graph.toBrowserPath(boundary)
+              );
+            }
           } else {
             broadcastReload();
           }

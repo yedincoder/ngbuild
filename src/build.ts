@@ -1,3 +1,4 @@
+
 import {
   cp,
   mkdir,
@@ -20,6 +21,7 @@ import {
 } from 'node:path';
 
 import { build, transform } from 'esbuild';
+import { minify } from 'html-minifier-terser';
 import { PluginManager } from './plugins/loader.js';
 import { VERSION } from './version.js';
 
@@ -29,6 +31,24 @@ const SCRIPT_EXTENSIONS = new Set([
   '.ts',
   '.tsx',
   '.jsx'
+]);
+
+const SOURCE_EXTENSIONS = new Set([
+  '.js',
+  '.mjs',
+  '.ts',
+  '.tsx',
+  '.jsx'
+]);
+
+const EXCLUDED_FILES = new Set([
+  'ngbuild.config.js',
+  'ngbuild.config.mjs',
+  'ngbuild.config.ts',
+  'tsconfig.json',
+  'package.json',
+  'package-lock.json',
+  'npm-shrinkwrap.json'
 ]);
 
 function isWithin(root: string, filePath: string): boolean {
@@ -142,6 +162,24 @@ async function optimizeCss(
   console.log(
     `[NgBuild] CSS optimized: ${relative(outputRoot, filePath)}`
   );
+}
+
+async function optimizeHtml(
+  html: string
+): Promise<string> {
+  return minify(html, {
+    collapseWhitespace: true,
+    conservativeCollapse: true,
+    removeComments: true,
+    removeOptionalTags: false,
+    removeAttributeQuotes: false,
+    removeEmptyAttributes: false,
+    removeEmptyElements: false,
+    removeRedundantAttributes: false,
+    minifyCSS: false,
+    minifyJS: false,
+    keepClosingSlash: true
+  });
 }
 
 async function processHtml(
@@ -266,6 +304,8 @@ async function processHtml(
     );
   }
 
+  html = await optimizeHtml(html);
+
   await mkdir(dirname(outputHtml), {
     recursive: true
   });
@@ -275,6 +315,107 @@ async function processHtml(
   console.log(
     `[NgBuild] HTML processed: ${relative(outputRoot, outputHtml)}`
   );
+
+  console.log(
+    `[NgBuild] HTML optimized: ${relative(outputRoot, outputHtml)}`
+  );
+}
+
+async function getClassicScripts(
+  htmlFiles: string[],
+  projectRoot: string
+): Promise<Set<string>> {
+  const scripts = new Set<string>();
+
+  for (const htmlFile of htmlFiles) {
+    const html = await readFile(htmlFile, 'utf-8');
+
+    const pattern = /<script\b([^>]*)>/gi;
+
+    for (const match of html.matchAll(pattern)) {
+      const attributes = match[1];
+
+      if (/\btype=["']module["']/i.test(attributes)) {
+        continue;
+      }
+
+      const srcMatch = attributes.match(
+        /\bsrc=["']([^"']+)["']/i
+      );
+
+      if (!srcMatch) {
+        continue;
+      }
+
+      const url = srcMatch[1];
+
+      if (
+        /^(https?:)?\/\//i.test(url) ||
+        /^(data|blob):/i.test(url)
+      ) {
+        continue;
+      }
+
+      const cleanUrl = url.split(/[?#]/)[0];
+
+      const scriptPath = cleanUrl.startsWith('/')
+        ? resolve(projectRoot, `.${cleanUrl}`)
+        : resolve(dirname(htmlFile), cleanUrl);
+
+      if (isWithin(projectRoot, scriptPath)) {
+        scripts.add(scriptPath);
+      }
+    }
+  }
+
+  return scripts;
+}
+
+async function copyProductionAssets(
+  sourceFiles: string[],
+  htmlFiles: string[],
+  projectRoot: string,
+  outputRoot: string
+): Promise<void> {
+  const classicScripts = await getClassicScripts(
+    htmlFiles,
+    projectRoot
+  );
+
+  for (const sourceFile of sourceFiles) {
+    const name = sourceFile.split(/[\\/]/).pop() ?? '';
+
+    if (EXCLUDED_FILES.has(name)) {
+      continue;
+    }
+
+    const extension = extname(sourceFile).toLowerCase();
+
+    if (
+      SOURCE_EXTENSIONS.has(extension) &&
+      !classicScripts.has(sourceFile)
+    ) {
+      continue;
+    }
+
+    const relativeFile = relative(
+      projectRoot,
+      sourceFile
+    );
+
+    const outputFile = join(
+      outputRoot,
+      relativeFile
+    );
+
+    await mkdir(dirname(outputFile), {
+      recursive: true
+    });
+
+    await cp(sourceFile, outputFile);
+  }
+
+  console.log('[NgBuild] Production assets copied.');
 }
 
 export async function buildProject(
@@ -337,23 +478,12 @@ export async function buildProject(
     recursive: true
   });
 
-  const entries = await readdir(projectRoot, {
-    withFileTypes: true
-  });
-
-  for (const entry of entries) {
-    if (excluded.has(entry.name)) {
-      continue;
-    }
-
-    await cp(
-      join(projectRoot, entry.name),
-      join(outputRoot, entry.name),
-      {
-        recursive: true
-      }
-    );
-  }
+  await copyProductionAssets(
+    sourceFiles,
+    htmlFiles,
+    projectRoot,
+    outputRoot
+  );
 
   const builtScripts = new Set<string>();
 
