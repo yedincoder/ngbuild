@@ -1,381 +1,311 @@
+
 # NgBuild
 
-**A lightweight frontend development and build tool built with Node.js and TypeScript.**
+**A lightweight frontend development and build tool powered by Node.js, TypeScript, and esbuild.**
 
-[![npm version](https://img.shields.io/npm/v/@yedincoder/ngbuild)](https://www.npmjs.com/package/@yedincoder/ngbuild)
+[![npm](https://img.shields.io/npm/v/@yedincoder/ngbuild)](https://www.npmjs.com/package/@yedincoder/ngbuild)
 ![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20-green)
 ![TypeScript](https://img.shields.io/badge/TypeScript-supported-blue)
 ![React](https://img.shields.io/badge/React-supported-61DAFB)
-![Status](https://img.shields.io/badge/status-stable-brightgreen)
+![License](https://img.shields.io/badge/status-stable-brightgreen)
 
-NgBuild adalah frontend development dan build tool independen berbasis Node.js dan TypeScript, menggunakan native ES Modules, esbuild, React, dan Plugin System tanpa bergantung pada Vite.
+NgBuild adalah frontend development dan build tool independen berbasis Node.js dan TypeScript.
 
-**Current Version:** v1.0.0 — Stable Release
+NgBuild menyediakan development server, native ES Modules, TypeScript, JSX/TSX, React Fast Refresh, JavaScript HMR, CSS Hot Update, Plugin System, dan optimized production build menggunakan esbuild.
 
-**npm:** https://www.npmjs.com/package/@yedincoder/ngbuild
+NgBuild dikembangkan secara independen tanpa bergantung pada Vite.
+
+**Current npm release:** `@yedincoder/ngbuild@1.0.0`
 
 **GitHub:** https://github.com/yedincoder/ngbuild
 
-**Release:** https://github.com/yedincoder/ngbuild/releases/tag/v1.0.0
+**npm:** https://www.npmjs.com/package/@yedincoder/ngbuild
+
+**GitHub Release:** https://github.com/yedincoder/ngbuild/releases/tag/v1.0.0
+
+---
 
 ## Features
 
-- **CLI** — Perintah `dev`, `build`, `--version`, dan `--help`.
-- **Development Server** — HTTP server berbasis Node.js dengan port default `4178`.
-- **Native ES Modules** — Menyajikan modul JavaScript langsung ke browser.
-- **TypeScript, JSX & TSX** — Transformasi menggunakan esbuild.
-- **React Support** — Mendukung aplikasi React dan React DOM.
-- **React Fast Refresh** — Memperbarui komponen React dan mempertahankan state pada pengujian yang didukung.
-- **JavaScript HMR** — Memperbarui modul yang menerima perubahan melalui `import.meta.hot.accept()`.
-- **HMR Dependency Propagation** — Menelusuri dependency dan menemukan modul pengimpor yang menerima HMR.
-- **Module Graph** — Melacak hubungan dependencies, importers, dan HMR boundaries.
-- **File Watcher & Auto Reload** — Memantau perubahan file menggunakan Node.js File Watcher dan Server-Sent Events.
-- **CSS Hot Update** — Memperbarui stylesheet tanpa full-page reload.
-- **Production Bundling** — Membundel JavaScript, TypeScript, JSX, dan TSX menggunakan esbuild.
-- **JavaScript Minification** — Meminimalkan kode JavaScript hasil bundling.
-- **CSS Minification** — Mengoptimalkan file CSS.
-- **HTML Minification** — Mengurangi whitespace dan komentar HTML secara konservatif.
-- **Production Build Optimization** — Mengecualikan source dan konfigurasi development yang tidak diperlukan dari output.
-- **Static Asset Support** — Menyajikan dan menyalin aset statis.
-- **Plugin System** — Hook `config`, `buildStart`, dan `transform`.
-- **Custom Port & Project Root** — Menentukan folder project dan port development.
-- **Local Package Distribution** — Mendukung instalasi package dari folder atau tarball npm.
+| Feature | Available |
+|---|---|
+| CLI Development Server | Yes |
+| Native ES Modules | Yes |
+| TypeScript | Yes |
+| JSX / TSX | Yes |
+| React Support | Yes |
+| React Fast Refresh | Yes |
+| JavaScript HMR | Yes |
+| HMR Dependency Propagation | Yes |
+| CSS Hot Update | Yes |
+| File Watcher | Yes |
+| Auto Reload | Yes |
+| Module Graph | Yes |
+| Plugin System | Yes |
+| Production Bundling | Yes |
+| JavaScript Minification | Yes |
+| CSS Minification | Yes |
+| HTML Minification | Yes |
+| Production Asset Cleanup | Yes |
+| Custom Development Port | Yes |
+| Project Initialization (`init`) | In development |
+
+> The `init` command is under development and is not included in the published npm v1.0.0 package.
+
+---
 
 ## Requirements
 
-- Node.js 20 atau lebih baru.
-- npm.
-- Windows, Linux, atau macOS dengan dukungan file watching sesuai platform.
+- Node.js 20 or newer
+- npm
+- Modern browser
 
+The development server uses port `4178` by default.
+
+---
 
 ## Installation
 
-### Install from npm
+### 1. Create a frontend project
 
-NgBuild v1.0.0 tersedia secara publik di npm registry.
+Create a directory for your application.
 
-```bash
+Example using PowerShell:
+
+```powershell
+mkdir my-ngbuild-app
+cd my-ngbuild-app
+npm init -y
+```
+
+### 2. Install NgBuild
+
+```powershell
 npm install --save-dev @yedincoder/ngbuild
 ```
 
-### Verify Installation
+This installs NgBuild as a development dependency.
 
-```bash
+### 3. Verify installation
+
+```powershell
 npx ngbuild --version
 ```
 
-Output:
+Expected output for the current published release:
 
 ```text
 NgBuild v1.0.0
 ```
 
-### Start Development Server
+### 4. Create index.html
 
-```bash
+Create `index.html` in your application root:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My NgBuild App</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
+```
+
+### 5. Create main.js
+
+```javascript
+const app = document.querySelector('#app');
+
+app.innerHTML = `
+  <h1>Hello NgBuild!</h1>
+  <p>Your development environment is ready.</p>
+`;
+
+console.log('[NgBuild] Application started');
+```
+
+### 6. Create style.css
+
+```css
+body {
+  margin: 0;
+  padding: 40px;
+  font-family: Arial, sans-serif;
+  background: #0c0d11;
+  color: #ffffff;
+}
+
+h1 {
+  color: #f97316;
+}
+```
+
+### 7. Project structure
+
+Your directory should look like this:
+
+```text
+my-ngbuild-app/
+├── node_modules/
+├── index.html
+├── main.js
+├── style.css
+├── package.json
+└── package-lock.json
+```
+
+NgBuild v1.0.0 does not generate these application files automatically.
+
+Installing the npm package only installs the development tool and its dependencies.
+
+### 8. Start development server
+
+```powershell
 npx ngbuild dev
 ```
 
-Default URL:
+Open:
+
+http://localhost:4178/
+
+The application should display:
 
 ```text
-http://localhost:4178/
+Hello NgBuild!
+
+Your development environment is ready.
 ```
 
-Custom port:
-
-```bash
-npx ngbuild dev --port 4205
-```
-
-### Production Build
-
-```bash
-npx ngbuild build
-```
-
-Output disimpan ke folder `dist/` pada project.
-
-### Development from Source
-
-Untuk berkontribusi atau mengembangkan NgBuild:
-
-```bash
-git clone https://github.com/yedincoder/ngbuild.git
-cd ngbuild
-npm install
-npm run compile
-npm run playground
-```
-
-### Package Naming
-
-Nama resmi package di npm:
-
-`@yedincoder/ngbuild`
-
-Nama executable CLI:
-
-`ngbuild`
-
-Gunakan package scoped resmi untuk menghindari konflik dengan package lain bernama `ngbuild`.
+---
 
 ## Quick Start
 
-### Run Built-in Playground
+For an existing frontend project with an `index.html`:
 
-Dari repository NgBuild:
-
-```bash
-npm run playground
-```
-
-Development server tersedia di:
-
-```text
-http://localhost:4178/
-```
-
-Contoh output:
-
-```text
-[NgBuild] Plugin loaded: ngbuild-example-plugin
-[Example Plugin] Config: development
-[Example Plugin] Build started: development
-
-  NgBuild v0.9.0
-
-  Local: http://localhost:4178/
-  Root:  .../ngbuild/playground
-
-  File Watcher: Active
-  Auto Reload:  Active
-  CSS Hot Update: Enabled
-  JavaScript HMR: Enabled
-  Module Graph:  Enabled
-  ES Modules:    Native
-  TypeScript:    Enabled
-  JSX / TSX:     Enabled
-  React:         Supported
-  React Refresh: Enabled
-  Plugin System: Enabled (1 loaded)
-
-  Press Ctrl+C to stop.
-```
-
-Jumlah plugin bergantung pada konfigurasi project.
-
-### Build Playground
-
-```bash
-node bin/ngbuild.js build playground
-```
-
-Hasil production build berada di:
-
-```text
-playground/dist/
-```
-
-## Playground
-
-NgBuild menyediakan empat halaman pengujian.
-
-| URL | Description |
-|---|---|
-| `http://localhost:4178/` | React playground utama |
-| `http://localhost:4178/react.html` | React Fast Refresh |
-| `http://localhost:4178/hmr.html` | JavaScript HMR |
-| `http://localhost:4178/dependency.html` | JavaScript HMR Dependency Propagation |
-
-`index.html` dan `react.html` sama-sama menggunakan `app.tsx`.
-
-`hmr.html` menggunakan `hmr-test.js` untuk pengujian JavaScript HMR.
-
-`dependency.html` menggunakan `main.js` yang mengimpor `utils.js` untuk menguji HMR Dependency Propagation.
-
-Keempat halaman digunakan untuk pengujian fitur dan pemeriksaan regresi.
-
-## CLI Usage
-
-### Development Server
-
-```bash
-node bin/ngbuild.js dev playground
-```
-
-Atau setelah package NgBuild terinstal:
-
-```bash
+```powershell
+npm install --save-dev @yedincoder/ngbuild
 npx ngbuild dev
 ```
 
-### Custom Port
+For production:
 
-```bash
-node bin/ngbuild.js dev playground --port 4205
-```
-
-### Production Build
-
-```bash
-node bin/ngbuild.js build playground
-```
-
-Dari project yang sudah memasang NgBuild:
-
-```bash
+```powershell
 npx ngbuild build
 ```
 
-### Version
-
-```bash
-npx ngbuild --version
-```
-
-Contoh output:
+NgBuild creates the optimized output in:
 
 ```text
-NgBuild v0.9.0
+dist/
+```
+
+---
+
+## CLI Commands
+
+| Command | Description |
+|---|---|
+| `npx ngbuild dev` | Start development server |
+| `npx ngbuild dev --port 4205` | Start using a custom port |
+| `npx ngbuild build` | Create optimized production build |
+| `npx ngbuild --version` | Show installed NgBuild version |
+| `npx ngbuild --help` | Show CLI help |
+
+### Development
+
+```powershell
+npx ngbuild dev
+```
+
+### Custom port
+
+```powershell
+npx ngbuild dev --port 4205
+```
+
+### Production
+
+```powershell
+npx ngbuild build
+```
+
+### Specify project root
+
+```powershell
+npx ngbuild dev ./my-project
+npx ngbuild build ./my-project
+```
+
+### Show version
+
+```powershell
+npx ngbuild --version
 ```
 
 ### Help
 
-```bash
+```powershell
 npx ngbuild --help
 ```
 
-Output:
+---
 
-```text
-NgBuild v0.9.0
+## Development Server
 
-Usage:
-  ngbuild dev [root]
-  ngbuild dev [root] --port 4178
-  ngbuild build [root]
-  ngbuild --version
-  ngbuild --help
+NgBuild provides a Node.js HTTP development server.
 
-Commands:
-  dev      Start development server
-  build    Create optimized production output
+Default configuration:
 
-Options:
-  --port   Development server port (default: 4178)
-  --version, -v
-  --help, -h
-```
-
-### Local CLI Linking
-
-Untuk menjalankan CLI langsung dari repository:
-
-```bash
-npm run compile
-npm link
-```
-
-Setelah linking:
-
-```bash
-ngbuild dev playground
-ngbuild build playground
-```
-
-`npm link` tidak menerbitkan package ke npm registry.
-
-## Default Port
-
-| Configuration | Value |
+| Setting | Value |
 |---|---|
-| Default Port | `4178` |
-| Default Host | `127.0.0.1` |
-| Default URL | `http://localhost:4178` |
-| Custom Port | `--port` |
-| Development Command | `ngbuild dev` |
-| Production Build Command | `ngbuild build` |
+| Host | 127.0.0.1 |
+| Port | 4178 |
+| Mode | Development |
+| Module Format | ESM |
+| File Watcher | Enabled |
+| CSS Hot Update | Enabled |
+| JavaScript HMR | Enabled |
+| React Fast Refresh | Enabled |
 
-Port `4179` yang digunakan selama pengujian production merupakan port static preview server, bukan default NgBuild.
-
-## Project Structure
+Example startup:
 
 ```text
-ngbuild/
-├── bin/
-│   └── ngbuild.js
-├── src/
-│   ├── cli.ts
-│   ├── server.ts
-│   ├── build.ts
-│   ├── version.ts
-│   ├── hmr/
-│   │   ├── graph.ts
-│   │   └── runtime.ts
-│   └── plugins/
-│       ├── types.ts
-│       └── loader.ts
-├── dist/
-│   ├── cli.js
-│   ├── server.js
-│   ├── build.js
-│   ├── version.js
-│   ├── hmr/
-│   └── plugins/
-├── playground/
-│   ├── ngbuild.config.js
-│   ├── index.html
-│   ├── react.html
-│   ├── hmr.html
-│   ├── dependency.html
-│   ├── main.js
-│   ├── utils.js
-│   ├── app.tsx
-│   ├── hmr-test.js
-│   ├── style.css
-│   └── dist/
-├── .gitignore
-├── package.json
-├── package-lock.json
-├── tsconfig.json
-└── README.md
+NgBuild v1.0.0
+
+Local: http://localhost:4178/
+Root:  /path/to/project
+
+File Watcher: Active
+Auto Reload:  Active
+CSS Hot Update: Enabled
+JavaScript HMR: Enabled
+Module Graph:  Enabled
+ES Modules:    Native
+TypeScript:    Enabled
+JSX / TSX:     Enabled
+React:         Supported
+React Refresh: Enabled
+Plugin System: Enabled (0 loaded)
 ```
 
-Folder `dist/` di root repository merupakan output kompilasi TypeScript internal NgBuild.
+NgBuild requires application source files to serve.
 
-Folder `playground/dist/` merupakan output production build aplikasi playground.
+If the requested file does not exist, the development server returns HTTP 404.
 
-Kedua folder memiliki fungsi berbeda.
-
-## Version Management
-
-Sejak v0.8.0, versi NgBuild menggunakan `package.json` sebagai sumber utama.
-
-Contoh:
-
-```json
-{
-  "name": "ngbuild",
-  "version": "0.9.0"
-}
-```
-
-`src/version.ts` membaca nomor versi tersebut dan mengekspor `VERSION`.
-
-Nilai `VERSION` digunakan oleh:
-
-- CLI.
-- Development Server.
-- Production Builder.
-
-Perubahan versi tidak perlu dilakukan secara manual pada setiap source file.
+---
 
 ## Native ES Modules
 
-NgBuild mendukung JavaScript menggunakan native ES Modules.
+NgBuild supports native JavaScript modules.
 
-Contoh `utils.js`:
+Example `utils.js`:
 
 ```javascript
 export function getMessage() {
@@ -383,55 +313,78 @@ export function getMessage() {
 }
 ```
 
-Contoh `main.js`:
+Example `main.js`:
 
 ```javascript
 import { getMessage } from './utils.js';
 
-document.querySelector('#app').textContent = getMessage();
+document.querySelector('#app').textContent =
+  getMessage();
 ```
 
-Import relatif seperti `./utils.js` dapat digunakan langsung oleh browser.
+Relative imports are supported in development.
 
-## TypeScript & JSX/TSX Transformer
+---
+
+## TypeScript, JSX and TSX
+
+NgBuild uses esbuild to transform supported frontend source files.
 
 | Extension | Development | Production |
 |---|---|---|
-| `.js` | Native ES Modules + HMR | Bundling untuk module entry |
-| `.mjs` | Native ES Modules + HMR | Bundling untuk module entry |
-| `.ts` | esbuild | esbuild |
-| `.jsx` | esbuild + React Refresh | esbuild |
-| `.tsx` | esbuild + React Refresh | esbuild |
+| `.js` | Native ESM / HMR | Bundled |
+| `.mjs` | Native ESM / HMR | Bundled |
+| `.ts` | esbuild | Bundled |
+| `.jsx` | esbuild / React Refresh | Bundled |
+| `.tsx` | esbuild / React Refresh | Bundled |
 
-Saat development, TypeScript, JSX, dan TSX ditransformasi menggunakan esbuild.
+Example TypeScript:
 
-Untuk JSX/TSX, NgBuild menggunakan instrumentasi Babel React Refresh.
+```typescript
+const message: string = 'Hello TypeScript!';
 
-Saat production, JavaScript dan TypeScript yang direferensikan sebagai HTML module script dibundel menggunakan esbuild.
+document.querySelector('#app')!.textContent = message;
+```
 
-Transformer tidak melakukan type-checking penuh terhadap seluruh aplikasi pengguna.
+HTML:
+
+```html
+<div id="app"></div>
+<script type="module" src="./main.ts"></script>
+```
+
+NgBuild transforms TypeScript for browser execution.
+
+Full TypeScript type checking is not automatically performed for user applications.
+
+---
 
 ## React Support
 
-Contoh aplikasi React:
+NgBuild supports React applications using JSX and TSX.
+
+Install React in your application:
+
+```powershell
+npm install react react-dom
+```
+
+Example `app.tsx`:
 
 ```tsx
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 function App() {
-  const [count, setCount] = useState<number>(0);
+  const [count, setCount] = useState(0);
 
   return (
     <main>
-      <h1>NgBuild</h1>
-
-      <p>React Fast Refresh Test</p>
-
+      <h1>NgBuild React</h1>
       <p>Counter: {count}</p>
 
       <button onClick={() => setCount(count + 1)}>
-        Tambah Counter
+        Increment
       </button>
     </main>
   );
@@ -440,78 +393,47 @@ function App() {
 const container = document.getElementById('app');
 
 if (!container) {
-  throw new Error('Root element #app not found');
+  throw new Error('Root element not found');
 }
 
 createRoot(container).render(<App />);
 ```
 
-HTML entry:
+HTML:
 
 ```html
 <div id="app"></div>
-<script type="module" src="/app.tsx"></script>
+<script type="module" src="./app.tsx"></script>
 ```
 
-React dan React DOM harus tersedia pada environment tempat aplikasi digunakan.
+Run:
 
-## File Watcher & Auto Reload
-
-Alur pembaruan development:
-
-```text
-Source File Changed
-        |
-        v
-Node.js File Watcher
-        |
-        v
-NgBuild Development Server
-        |
-        v
-Server-Sent Events
-        |
-        v
-Browser Update
+```powershell
+npx ngbuild dev
 ```
 
-Perilaku NgBuild v0.9.0:
+React Fast Refresh supports state-preserving updates for tested component changes.
 
-- Perubahan `.css` mengirim event `css-update`.
-- Perubahan `.js` atau `.mjs` diperiksa melalui Module Graph.
-- Jika tersedia HMR boundary yang valid, server mengirim `js-update`.
-- Jika perubahan JavaScript tidak dapat diterima, browser melakukan full-page reload.
-- Perubahan `.jsx` atau `.tsx` mengirim `react-update`.
-- Perubahan HTML dan file lain umumnya menggunakan fallback full-page reload.
+Not every React component pattern or dependency graph has been validated.
 
-## CSS Hot Update
+---
 
-Sejak v0.4.0, NgBuild mendukung pembaruan stylesheet tanpa reload halaman.
+## JavaScript HMR
 
-Contoh:
+NgBuild supports Hot Module Replacement for JavaScript modules that accept updates.
 
-```html
-<link rel="stylesheet" href="/style.css">
-```
-
-Saat file CSS berubah, browser memperbarui URL stylesheet dengan cache-busting query parameter.
-
-Pengujian CSS Hot Update dilakukan tanpa melakukan full-page reload.
-
-## JavaScript HMR (v0.7.0)
-
-JavaScript HMR memungkinkan modul JavaScript menerima pembaruan tanpa memuat ulang seluruh halaman.
-
-Contoh:
+Example:
 
 ```javascript
 let count = import.meta.hot?.data.count ?? 0;
 
+const app = document.querySelector('#app');
+
 function render() {
-  document.querySelector('#app').innerHTML = `
+  app.innerHTML = `
     <h1>NgBuild JavaScript HMR</h1>
     <p>Counter: ${count}</p>
-    <button id="increment">Tambah</button>
+    <button id="increment">Increment</button>
   `;
 
   document.querySelector('#increment').onclick = () => {
@@ -533,120 +455,56 @@ if (import.meta.hot) {
 }
 ```
 
-Pengujian:
+When the module is updated during development, NgBuild can update it without a full-page reload.
 
-```bash
-node bin/ngbuild.js dev playground
-```
+If a change cannot be accepted, the development server falls back to reloading the page.
 
-Buka:
+---
 
-```text
-http://localhost:4178/hmr.html
-```
+## HMR Dependency Propagation
 
-Naikkan counter, lalu ubah teks di `hmr-test.js`.
+NgBuild tracks dependencies and importers using its Module Graph.
 
-Pada pengujian fitur, teks berhasil berubah dan counter tetap dipertahankan.
-
-## JavaScript HMR Dependency Propagation (v0.9.0)
-
-NgBuild v0.9.0 menambahkan kemampuan menelusuri hubungan dependency pada Module Graph untuk menentukan HMR boundary.
-
-Contoh dependency:
+Example:
 
 ```text
 main.js
-   |
-   +-- imports utils.js
+   └── utils.js
 ```
 
-Jika `utils.js` berubah, Module Graph memeriksa apakah `main.js` atau modul pengimpor lainnya dapat menerima pembaruan.
+When `utils.js` changes, NgBuild checks whether `main.js` or another importer can accept the update.
 
-### Module Graph
+This feature was tested with a counter that remained at 10 while the imported message changed.
 
-Setiap Module Node menyimpan:
+The current implementation supports tested JavaScript module patterns and is not a complete replacement for advanced dependency graph handling.
 
-```typescript
-interface ModuleNode {
-  id: string;
-  dependencies: Set<string>;
-  importers: Set<string>;
-  selfAccepting: boolean;
-}
+---
+
+## CSS Hot Update
+
+NgBuild updates stylesheets during development without requiring a full-page reload.
+
+HTML:
+
+```html
+<link rel="stylesheet" href="./style.css">
 ```
 
-Method terkait:
+Update `style.css`, save the file, and the browser receives a CSS update through Server-Sent Events.
 
-- `ensureEntry()` — membuat atau memperoleh module node.
-- `updateModule()` — memperbarui hubungan dependency.
-- `getModule()` — memperoleh module node.
-- `isHmrAccepted()` — memeriksa penerimaan HMR.
-- `getHmrBoundaries()` — mencari HMR boundaries.
-- `getHmrPropagation()` — memeriksa jalur propagasi.
-- `toBrowserPath()` — mengubah path filesystem menjadi browser path.
-- `clear()` — mengosongkan graph.
+---
 
-### Dependency HMR Example
+## React Fast Refresh
 
-`playground/utils.js`:
+NgBuild uses:
 
-```javascript
-export function getMessage() {
-  return 'NgBuild Auto Reload berhasil!';
-}
-```
+- esbuild
+- Babel React Refresh instrumentation
+- react-refresh runtime
+- React vendor modules
+- Server-Sent Events
 
-`playground/main.js` mengimpor `getMessage()` dari `utils.js` dan menerima HMR.
-
-Halaman pengujian:
-
-```text
-http://localhost:4178/dependency.html
-```
-
-Langkah pengujian:
-
-1. Jalankan development server.
-2. Buka `dependency.html`.
-3. Naikkan counter sampai 10.
-4. Ubah pesan di `utils.js`.
-5. Simpan file.
-6. Periksa pesan dan counter tanpa refresh manual.
-
-Hasil pengujian v0.9.0:
-
-```text
-NgBuild Dependency HMR
-
-NgBuild Dependency HMR v0.9.0 berhasil!
-
-Port default: 4178
-
-Counter: 10
-
-Tambah Counter
-
-Edit utils.js untuk menguji Dependency HMR.
-```
-
-**Status:** Dependency HMR berhasil memperbarui pesan dari `utils.js`, dan counter tetap 10 pada pengujian playground.
-
-Pengujian ini belum membuktikan kompatibilitas dengan seluruh pola dependency graph atau seluruh jenis import JavaScript.
-
-## React Fast Refresh (v0.8.0)
-
-React Fast Refresh memperbarui komponen React saat pengembangan tanpa kehilangan state pada perubahan yang didukung.
-
-Komponen utama:
-
-- **esbuild** — Transformasi JSX/TSX.
-- **Babel** — Instrumentasi React Refresh.
-- **react-refresh** — Runtime pembaruan React.
-- **React Vendor Modules** — Menyediakan modul React, React DOM, dan JSX Runtime.
-- **SSE** — Mengirim event pembaruan ke browser.
-
-Endpoint development:
+The development server provides internal endpoints:
 
 ```text
 /__ngbuild/events
@@ -656,227 +514,95 @@ Endpoint development:
 /__ngbuild/vendor/jsx-runtime.js
 ```
 
-### React Fast Refresh Test
+React Fast Refresh was introduced in v0.8.0 and remains available in v1.0.0.
 
-Jalankan:
-
-```bash
-node bin/ngbuild.js dev playground
-```
-
-Buka:
-
-```text
-http://localhost:4178/react.html
-```
-
-Langkah pengujian:
-
-1. Jalankan aplikasi React.
-2. Naikkan counter sampai 10.
-3. Ubah teks komponen di `app.tsx`.
-4. Simpan tanpa refresh manual.
-5. Periksa apakah teks berubah dan counter tetap 10.
-
-Hasil pengujian:
-
-```text
-NgBuild v0.8.0
-
-React Fast Refresh Test 12345678910
-
-Counter: 10
-
-Tambah Counter
-
-Powered by NgBuild
-```
-
-**Status:** React Fast Refresh berhasil mempertahankan state `useState` pada pengujian playground.
-
-Hasil tersebut belum menjamin seluruh kemungkinan React component boundaries, custom hooks, atau pola aplikasi kompleks.
+---
 
 ## Production Build
 
-NgBuild menyediakan production bundling menggunakan esbuild.
+Run:
 
-Jalankan:
-
-```bash
-node bin/ngbuild.js build playground
-```
-
-Contoh output v0.9.0:
-
-```text
-[NgBuild] Plugin loaded: ngbuild-example-plugin
-[Example Plugin] Config: production
-[Example Plugin] Build started: production
-
-  NgBuild v0.9.0
-
-  Mode: Production
-  Root: .../ngbuild/playground
-  Out:  .../ngbuild/playground/dist
-  Plugins: 1
-
-[NgBuild] Production assets copied.
-[NgBuild] Bundled: main.js
-[NgBuild] HTML processed: dependency.html
-[NgBuild] HTML optimized: dependency.html
-[NgBuild] Bundled: hmr-test.js
-[NgBuild] HTML processed: hmr.html
-[NgBuild] HTML optimized: hmr.html
-[Example Plugin] Transform: .../app.tsx (production)
-[NgBuild] Bundled: app.js
-[NgBuild] HTML processed: index.html
-[NgBuild] HTML optimized: index.html
-[NgBuild] HTML processed: react.html
-[NgBuild] HTML optimized: react.html
-[NgBuild] CSS optimized: style.css
-
-  Production build completed.
-```
-
-### Production Features
-
-| Feature | Status |
-|---|---|
-| HTML Entry Discovery | Supported |
-| JavaScript Bundling | Supported |
-| TypeScript Bundling | Supported |
-| JSX/TSX Bundling | Supported |
-| React Production Bundling | Supported |
-| JavaScript Minification | Supported |
-| CSS Minification | Supported |
-| HTML Minification | Supported |
-| HTML Script Reference Update | Supported |
-| Production Asset Cleanup | Supported |
-| Static Asset Copying | Supported |
-| Plugin Transform Hook | Supported |
-| Advanced Asset Optimization | Not yet |
-
-Development HMR runtime dan React Fast Refresh tidak digunakan pada output production.
-
-### HTML Minification (v0.9.0)
-
-NgBuild menggunakan `html-minifier-terser` untuk mengoptimalkan HTML saat production build.
-
-Optimasi mencakup:
-
-- Pengurangan whitespace.
-- Penghapusan komentar HTML.
-- Pengurangan redundant attributes sesuai konfigurasi konservatif.
-- Mempertahankan optional tags dan atribut yang berpotensi memengaruhi kompatibilitas.
-
-JavaScript dan CSS tidak diminifikasi melalui HTML Minifier karena keduanya sudah memiliki proses optimasi tersendiri.
-
-### Production Build Optimization (v0.9.0)
-
-NgBuild tidak lagi menyalin seluruh source project secara langsung.
-
-File development yang dikecualikan mencakup:
-
-- Source TypeScript/TSX dan JSX yang tidak diperlukan sebagai aset statis.
-- Source JavaScript yang tidak diperlukan sebagai file terpisah setelah bundling.
-- `ngbuild.config.js`.
-- `ngbuild.config.mjs`.
-- `ngbuild.config.ts`.
-- `tsconfig.json`.
-- `package.json`.
-- `package-lock.json`.
-- `npm-shrinkwrap.json`.
-
-HTML, CSS, gambar, font, JSON yang relevan, dan aset statis lainnya tetap dapat disalin.
-
-JavaScript klasik yang direferensikan HTML tetap didukung.
-
-**Batasan:** aset atau JavaScript yang hanya dimuat melalui pola dynamic runtime tertentu belum dijamin terdeteksi otomatis.
-
-### Playground Production Output
-
-Pada pengujian v0.9.0, output `playground/dist/` berisi:
-
-```text
-playground/dist/
-├── app.js
-├── dependency.html
-├── hmr-test.js
-├── hmr.html
-├── index.html
-├── main.js
-├── react.html
-└── style.css
-```
-
-Source `app.tsx`, `utils.js`, dan konfigurasi plugin tidak ikut disalin sebagai file sumber terpisah.
-
-### Production Preview
-
-Jalankan static preview server:
-
-```bash
-npx serve playground/dist -l 4179
-```
-
-Untuk pengujian dengan `serve` yang membutuhkan URL HTML tetap berekstensi `.html`, konfigurasi dapat dibuat di `playground/dist/serve.json`:
-
-```json
-{
-  "cleanUrls": false
-}
-```
-
-Kemudian jalankan ulang static server.
-
-Akses langsung:
-
-```text
-http://127.0.0.1:4179/index.html
-http://127.0.0.1:4179/react.html
-http://127.0.0.1:4179/hmr.html
-http://127.0.0.1:4179/dependency.html
-```
-
-Pada pengujian, server mengembalikan HTTP 200 atau 304 untuk file aplikasi.
-
-HTTP 304 berarti browser menggunakan cache yang masih valid.
-
-`serve.json` merupakan konfigurasi alat preview, bukan bagian wajib dari output build NgBuild.
-
-### External Project Build Test
-
-NgBuild v0.9.0 juga diuji pada project eksternal:
-
-```text
-D:\ngappid-project\ngbuild-test
-```
-
-Perintah:
-
-```bash
+```powershell
 npx ngbuild build
 ```
 
-Hasil:
+NgBuild scans HTML entries, bundles referenced module scripts, and writes optimized output into `dist/`.
+
+Production features:
+
+| Feature | Available |
+|---|---|
+| HTML Entry Discovery | Yes |
+| JavaScript Bundling | Yes |
+| TypeScript Bundling | Yes |
+| JSX/TSX Bundling | Yes |
+| React Production Bundling | Yes |
+| JavaScript Minification | Yes |
+| CSS Minification | Yes |
+| HTML Minification | Yes |
+| HTML Module Script Processing | Yes |
+| Production Asset Cleanup | Yes |
+| Static Asset Copying | Yes |
+| Plugin Transform Hook | Yes |
+
+Example output:
 
 ```text
 dist/
 ├── index.html
-└── main.js
+├── main.js
+└── style.css
 ```
 
-Production build berhasil dan file metadata npm tidak ikut disalin ke output.
+Actual output depends on your project files.
+
+### HTML Minification
+
+NgBuild uses `html-minifier-terser`.
+
+The configured HTML minification process conservatively reduces whitespace and comments.
+
+### Production Asset Cleanup
+
+NgBuild excludes known development-only files from its production output.
+
+Examples:
+
+```text
+ngbuild.config.js
+ngbuild.config.mjs
+ngbuild.config.ts
+tsconfig.json
+package.json
+package-lock.json
+npm-shrinkwrap.json
+```
+
+JavaScript and TypeScript source files that have been bundled are not separately copied unless required by the supported asset-copying logic.
+
+Advanced dynamic imports and runtime-loaded assets may need additional handling.
+
+### Production Preview
+
+The `dist/` directory contains static output.
+
+You can preview it using a static server:
+
+```powershell
+npx serve dist -l 4179
+```
+
+The exact URL handling depends on the static server configuration.
+
+NgBuild's default development server uses port `4178`; port `4179` is only an example production preview port.
+
+---
 
 ## Plugin System
 
-Sejak v0.6.0, NgBuild mendukung konfigurasi plugin melalui `ngbuild.config.js`.
+NgBuild supports plugins using `ngbuild.config.js`.
 
-Plugin bersifat opsional.
-
-### Plugin Configuration
-
-Contoh:
+Example:
 
 ```javascript
 export default {
@@ -886,23 +612,17 @@ export default {
 
       config(context) {
         console.log(
-          `[Example Plugin] Config: ${context.mode}`
+          '[NgBuild] Mode:', context.mode
         );
       },
 
       buildStart(context) {
         console.log(
-          `[Example Plugin] Build started: ${context.mode}`
+          '[NgBuild] Build started:', context.mode
         );
       },
 
       transform(code, id, context) {
-        if (id.endsWith('app.tsx')) {
-          console.log(
-            `[Example Plugin] Transform: ${id} (${context.mode})`
-          );
-        }
-
         return code;
       }
     }
@@ -910,219 +630,253 @@ export default {
 };
 ```
 
-Plugin contoh hanya menghasilkan log dan tidak mengubah source React.
+Supported hooks:
 
-### Plugin Hooks
-
-| Hook | Purpose | When |
-|---|---|---|
-| `config(context)` | Konfigurasi awal | Saat plugin dimuat |
-| `buildStart(context)` | Inisialisasi | Saat server atau build dimulai |
-| `transform(code, id, context)` | Memproses source modul | Saat transformasi modul |
-
-Konteks plugin:
-
-| Property | Type |
+| Hook | Description |
 |---|---|
-| `root` | `string` |
-| `mode` | `'development' \| 'production'` |
+| `config(context)` | Configure plugin |
+| `buildStart(context)` | Execute before development or build |
+| `transform(code, id, context)` | Transform module source |
 
-Hook `transform` dapat mengembalikan source baru atau `null`/`undefined` untuk mempertahankan source sebelumnya.
-
-### Plugin Limitations
-
-- Plugin mendukung tiga hook dasar.
-- Konfigurasi dimuat saat proses dimulai.
-- Hot reload konfigurasi plugin belum tersedia.
-- HTTP middleware plugin belum tersedia.
-- Plugin berjalan sebagai kode Node.js, sehingga hanya plugin tepercaya yang sebaiknya digunakan.
-
-## NPM Package Distribution
-
-NgBuild menggunakan `package.json` untuk mengatur file yang masuk paket distribusi.
-
-Konfigurasi utama:
-
-```json
-{
-  "name": "ngbuild",
-  "version": "0.9.0",
-  "type": "module",
-  "bin": {
-    "ngbuild": "./bin/ngbuild.js"
-  },
-  "files": [
-    "bin/",
-    "dist/"
-  ]
-}
-```
-
-Script `prepack` menjalankan kompilasi TypeScript sebelum packing.
-
-### Package Validation
-
-Jalankan dari repository:
-
-```bash
-npm run compile
-npm pack --dry-run
-```
-
-Untuk membuat tarball:
-
-```bash
-npm pack
-```
-
-Hasil pengujian v0.9.0:
+Plugin context includes:
 
 ```text
-ngbuild-0.9.0.tgz
-Package size: 15.3 kB
-Total files: 11
+root
+mode
 ```
 
-Isi package mencakup:
+The mode is either `development` or `production`.
 
-```text
-bin/ngbuild.js
-dist/build.js
-dist/cli.js
-dist/hmr/graph.js
-dist/hmr/runtime.js
-dist/plugins/loader.js
-dist/plugins/types.js
-dist/server.js
-dist/version.js
-package.json
-README.md
-```
+Plugins execute as Node.js code. Only load trusted plugins.
 
-Source TypeScript dan folder playground tidak ikut masuk package.
+---
 
-### Tarball Installation Test
+## Project Initialization — In Development
 
-Pada project eksternal:
+The next update is adding a project initializer.
+
+Planned command:
 
 ```powershell
-npm install -D ..\ngbuild\ngbuild-0.9.0.tgz
+npx ngbuild init
 ```
 
-Verifikasi:
+This command is **not available in the published v1.0.0 package**.
 
-```bash
-npx ngbuild --version
-npx ngbuild build
+The development implementation creates:
+
+```text
+my-ngbuild-app/
+├── index.html
+├── main.js
+└── style.css
 ```
 
-Hasil pengujian:
+It includes a starter UI with NgBuild branding, development information, and an interactive counter.
 
-- Package tarball berhasil diinstal.
-- CLI menampilkan `NgBuild v0.9.0`.
-- Production build berhasil.
-- Audit dependency pada pengujian melaporkan 0 vulnerabilities.
+Existing files are skipped instead of being overwritten.
 
-Pengujian tarball tidak berarti package sudah dipublikasikan ke npm registry.
+### Test the local development implementation
 
-## Development Scripts
+Clone the NgBuild source:
 
-| Command | Description |
-|---|---|
-| `npm run compile` | Kompilasi source TypeScript NgBuild |
-| `npm run playground` | Compile dan jalankan playground |
-| `npm run dev` | Compile dan jalankan development server |
-| `npm run build` | Compile TypeScript internal NgBuild |
-| `npm pack --dry-run` | Periksa isi package npm |
-| `npm pack` | Membuat tarball package |
-| `ngbuild dev [root]` | Development server aplikasi |
-| `ngbuild build [root]` | Production build aplikasi |
-
-`npm run build` dalam repository NgBuild berbeda dari `ngbuild build`.
-
-Perintah pertama mengompilasi tool NgBuild, sedangkan perintah kedua membangun aplikasi frontend.
-
-## Dependencies
-
-### Runtime Dependencies
-
-NgBuild v0.9.0 menggunakan:
-
-- `@babel/core`
-- `esbuild`
-- `html-minifier-terser`
-- `react`
-- `react-dom`
-- `react-refresh`
-
-### Development Dependencies
-
-- `typescript`
-- `@types/node`
-- `@types/babel__core`
-- `@types/html-minifier-terser`
-
-Versi dependency mengikuti `package.json` dan lockfile project.
-
-## Roadmap
-
-| Version | Development Focus | Status |
-|---|---|---|
-| v0.1.0 | CLI & HTTP Development Server | Completed |
-| v0.2.0 | File Watcher, Auto Reload & Native ES Modules | Completed |
-| v0.3.0 | TypeScript, JSX/TSX & React Support | Completed |
-| v0.4.0 | CSS Hot Update & HMR Foundation | Completed |
-| v0.5.0 | Production Bundler | Completed |
-| v0.6.0 | Plugin System | Completed |
-| v0.7.0 | JavaScript HMR & Module Graph | Tested |
-| v0.8.0 | React Fast Refresh | Tested |
-| v0.9.0 | HTML Minification, Production Build Optimization & HMR Dependency Propagation | Tested |
-| v1.0.0 | Stable Release, npm Publishing & Package Distribution | Released |
-
-## Current Limitations
-
-NgBuild v0.9.0 masih memiliki keterbatasan:
-
-- HMR Dependency Propagation baru diuji pada pola dependency sederhana.
-- React Fast Refresh belum diuji pada seluruh pola aplikasi React.
-- Type-checking penuh aplikasi pengguna belum tersedia secara otomatis.
-- Bare imports pada native JavaScript belum ditangani secara umum.
-- Tidak semua dynamic imports dan aset runtime dapat dianalisis otomatis.
-- Advanced Asset Optimization belum tersedia.
-- Module Graph dan incremental transformation masih dapat dikembangkan.
-- Plugin System masih menyediakan tiga hook dasar.
-- Pengujian lintas sistem operasi dan aplikasi berskala besar belum lengkap.
-
-## Development
-
-Clone repository:
-
-```bash
+```powershell
 git clone https://github.com/yedincoder/ngbuild.git
 cd ngbuild
 npm install
+npm run compile
+```
+
+The commands below require a local source revision that includes the new `init` implementation.
+
+Initialize a separate test project:
+
+```powershell
+node bin/ngbuild.js init ../ngbuild-init-test
+```
+
+Start the development server:
+
+```powershell
+node bin/ngbuild.js dev ../ngbuild-init-test
+```
+
+Build the application:
+
+```powershell
+node bin/ngbuild.js build ../ngbuild-init-test
+```
+
+The initializer will become part of a future npm release after its testing and release process is complete.
+
+---
+
+## Development from Source
+
+Repository:
+
+https://github.com/yedincoder/ngbuild
+
+Clone:
+
+```powershell
+git clone https://github.com/yedincoder/ngbuild.git
+cd ngbuild
+npm install
+```
+
+Compile the internal TypeScript source:
+
+```powershell
+npm run compile
+```
+
+Start the built-in playground:
+
+```powershell
 npm run playground
 ```
 
-Production build playground:
+Production build:
 
-```bash
+```powershell
 node bin/ngbuild.js build playground
 ```
 
-Periksa package distribusi:
+### Development Scripts
 
-```bash
-npm pack --dry-run
+| Command | Purpose |
+|---|---|
+| `npm run compile` | Compile NgBuild TypeScript |
+| `npm run dev` | Compile and start development server |
+| `npm run playground` | Compile and start playground |
+| `npm run build` | Compile internal NgBuild source |
+| `npm pack --dry-run` | Inspect npm package contents |
+| `npm pack` | Create npm distribution archive |
+
+`npm run build` in the NgBuild repository is not the same as `npx ngbuild build`.
+
+---
+
+## Internal Project Structure
+
+```text
+ngbuild/
+├── bin/
+│   └── ngbuild.js
+├── src/
+│   ├── cli.ts
+│   ├── server.ts
+│   ├── build.ts
+│   ├── version.ts
+│   ├── hmr/
+│   │   ├── graph.ts
+│   │   └── runtime.ts
+│   └── plugins/
+│       ├── types.ts
+│       └── loader.ts
+├── dist/
+├── playground/
+├── package.json
+├── package-lock.json
+├── tsconfig.json
+└── README.md
 ```
+
+The root `dist/` contains compiled NgBuild code.
+
+The `playground/dist/` directory contains production output generated from the playground application.
+
+---
+
+## npm Package Distribution
+
+Official npm package:
+
+```text
+@yedincoder/ngbuild
+```
+
+CLI executable:
+
+```text
+ngbuild
+```
+
+Installation:
+
+```powershell
+npm install -D @yedincoder/ngbuild
+```
+
+Use:
+
+```powershell
+npx ngbuild dev
+npx ngbuild build
+```
+
+Do not confuse this package with the separate unscoped `ngbuild` package on npm.
+
+### Package Contents
+
+The published distribution contains the CLI, compiled JavaScript, package metadata, and README.
+
+Source TypeScript files and playground source are not included in the npm package.
+
+---
+
+## Release History
+
+| Version | Features |
+|---|---|
+| v0.1.0 | CLI and Development Server |
+| v0.2.0 | File Watcher, Auto Reload and Native ESM |
+| v0.3.0 | TypeScript, JSX/TSX and React Support |
+| v0.4.0 | CSS Hot Update |
+| v0.5.0 | Production Bundler |
+| v0.6.0 | Plugin System |
+| v0.7.0 | JavaScript HMR and Module Graph |
+| v0.8.0 | React Fast Refresh |
+| v0.9.0 | HTML Minification, Production Optimization, HMR Dependency Propagation |
+| v1.0.0 | First Stable Release, npm Distribution and CLI Validation |
+
+### Next Development
+
+Project Initialization and starter UI are being developed for a future update.
+
+They have not yet been published in npm v1.0.0.
+
+---
+
+## Current Limitations
+
+- No project initialization command in npm v1.0.0.
+- JavaScript HMR dependency propagation has been tested on basic dependency patterns.
+- React Fast Refresh has not been validated with every React component architecture.
+- Full application TypeScript type checking is not automatically performed.
+- Advanced dynamic import handling is limited.
+- Some runtime-loaded assets may require explicit management.
+- The Plugin System currently has three basic hooks.
+- Cross-platform and large-project regression testing remains limited.
+
+---
+
+## Links
+
+**npm:** https://www.npmjs.com/package/@yedincoder/ngbuild
+
+**GitHub:** https://github.com/yedincoder/ngbuild
+
+**GitHub Releases:** https://github.com/yedincoder/ngbuild/releases
+
+---
 
 ## Author
 
 **YedinCoder**
 
 GitHub: https://github.com/yedincoder
-
-Repository: https://github.com/yedincoder/ngbuild
 
 ---
 
