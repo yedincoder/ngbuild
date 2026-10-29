@@ -2,8 +2,9 @@ import { createServer, type ServerResponse } from 'node:http';
 import { readFile, realpath, stat, watch } from 'node:fs/promises';
 import { resolve, relative, sep, extname, isAbsolute } from 'node:path';
 import { build, type Loader } from 'esbuild';
+import { PluginManager } from './plugins/loader.js';
 
-const VERSION = '0.5.0';
+const VERSION = '0.6.0';
 
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -85,7 +86,8 @@ function injectClient(html: string): string {
 
 async function transformModule(
   filePath: string,
-  projectRoot: string
+  projectRoot: string,
+  plugins: PluginManager
 ): Promise<string> {
   const result = await build({
     entryPoints: [filePath],
@@ -104,7 +106,10 @@ async function transformModule(
       '.tsx': 'tsx',
       '.jsx': 'jsx',
       '.js': 'js'
-    }
+    },
+    plugins: [
+      plugins.createEsbuildPlugin()
+    ]
   });
 
   const output = result.outputFiles?.find(
@@ -124,6 +129,14 @@ export async function startServer(
 ): Promise<void> {
   const projectRoot = await realpath(root);
   const clients = new Set<ServerResponse>();
+
+  const plugins = new PluginManager(
+    projectRoot,
+    'development'
+  );
+
+  await plugins.load();
+  await plugins.buildStart();
 
   function broadcastReload(): void {
     for (const client of clients) {
@@ -210,7 +223,12 @@ export async function startServer(
       let contentType: string;
 
       if (TRANSFORM_LOADERS[extension]) {
-        content = await transformModule(actualPath, projectRoot);
+        content = await transformModule(
+          actualPath,
+          projectRoot,
+          plugins
+        );
+
         contentType = 'text/javascript; charset=utf-8';
 
         console.log(
@@ -277,6 +295,7 @@ export async function startServer(
   TypeScript:   Enabled
   JSX / TSX:    Enabled
   React:        Supported
+  Plugin System: Enabled (${plugins.count} loaded)
 
   Press Ctrl+C to stop.
 `);

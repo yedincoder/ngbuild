@@ -20,8 +20,9 @@ import {
 } from 'node:path';
 
 import { build, transform } from 'esbuild';
+import { PluginManager } from './plugins/loader.js';
 
-const VERSION = '0.5.0';
+const VERSION = '0.6.0';
 
 const SCRIPT_EXTENSIONS = new Set([
   '.js',
@@ -77,7 +78,8 @@ async function buildScript(
   sourceFile: string,
   outputFile: string,
   projectRoot: string,
-  outputRoot: string
+  outputRoot: string,
+  plugins: PluginManager
 ): Promise<void> {
   await mkdir(dirname(outputFile), {
     recursive: true
@@ -112,7 +114,10 @@ async function buildScript(
     assetNames: 'assets/[name]-[hash]',
     outbase: projectRoot,
     publicPath: '/',
-    metafile: false
+    metafile: false,
+    plugins: [
+      plugins.createEsbuildPlugin()
+    ]
   });
 
   console.log(
@@ -144,7 +149,8 @@ async function processHtml(
   sourceHtml: string,
   projectRoot: string,
   outputRoot: string,
-  builtScripts: Set<string>
+  builtScripts: Set<string>,
+  plugins: PluginManager
 ): Promise<void> {
   const relativeHtml = relative(projectRoot, sourceHtml);
 
@@ -229,7 +235,8 @@ async function processHtml(
         actualScript,
         outputScript,
         projectRoot,
-        outputRoot
+        outputRoot,
+        plugins
       );
 
       builtScripts.add(outputScript);
@@ -284,12 +291,21 @@ export async function buildProject(
 
   const outputRoot = join(projectRoot, 'dist');
 
+  const plugins = new PluginManager(
+    projectRoot,
+    'production'
+  );
+
+  await plugins.load();
+  await plugins.buildStart();
+
   console.log(`
   NgBuild v${VERSION}
 
   Mode: Production
   Root: ${projectRoot}
   Out:  ${outputRoot}
+  Plugins: ${plugins.count}
 `);
 
   const excluded = new Set([
@@ -347,7 +363,8 @@ export async function buildProject(
       htmlFile,
       projectRoot,
       outputRoot,
-      builtScripts
+      builtScripts,
+      plugins
     );
   }
 
