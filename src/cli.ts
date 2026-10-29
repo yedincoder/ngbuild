@@ -1,5 +1,6 @@
 import { resolve, join, dirname, basename } from 'node:path';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, copyFile, constants } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import { startServer } from './server.js';
 import { buildProject } from './build.js';
 import { VERSION } from './version.js';
@@ -44,56 +45,6 @@ const root = resolve(
   process.cwd(),
   positional[0] ?? '.'
 );
-
-function createFavicon(): Buffer {
-  const size = 32;
-  const imageSize = 40 + size * size * 4 + size * 4;
-  const buffer = Buffer.alloc(22 + imageSize);
-
-  buffer.writeUInt16LE(1, 2);
-  buffer.writeUInt16LE(1, 4);
-  buffer.writeUInt8(size, 6);
-  buffer.writeUInt8(size, 7);
-  buffer.writeUInt16LE(1, 10);
-  buffer.writeUInt16LE(32, 12);
-  buffer.writeUInt32LE(imageSize, 14);
-  buffer.writeUInt32LE(22, 18);
-
-  buffer.writeUInt32LE(40, 22);
-  buffer.writeInt32LE(size, 26);
-  buffer.writeInt32LE(size * 2, 30);
-  buffer.writeUInt16LE(1, 34);
-  buffer.writeUInt16LE(32, 36);
-  buffer.writeUInt32LE(size * size * 4, 42);
-
-  const glyphs = {
-    N: ['10001', '11001', '10101', '10101', '10011', '10001', '10001'],
-    G: ['01111', '10000', '10000', '10111', '10001', '10001', '01111']
-  };
-
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const offset = 62 + ((size - 1 - y) * size + x) * 4;
-      const glyphY = Math.floor((y - 9) / 2);
-      let on = false;
-
-      if (glyphY >= 0 && glyphY < 7) {
-        if (x >= 4 && x < 14) {
-          on = glyphs.N[glyphY][Math.floor((x - 4) / 2)] === '1';
-        } else if (x >= 18 && x < 28) {
-          on = glyphs.G[glyphY][Math.floor((x - 18) / 2)] === '1';
-        }
-      }
-
-      buffer[offset] = on ? 0x16 : 0x0c;
-      buffer[offset + 1] = on ? 0x73 : 0x0d;
-      buffer[offset + 2] = on ? 0xf9 : 0x11;
-      buffer[offset + 3] = 255;
-    }
-  }
-
-  return buffer;
-}
 
 async function initProject(projectRoot: string): Promise<void> {
   const files: Record<string, string> = {
@@ -1089,13 +1040,21 @@ Initializing project: ${projectRoot}
   const faviconPath = join(projectRoot, 'public', 'favicon.ico');
   await mkdir(dirname(faviconPath), { recursive: true });
 
+  // Bundled source asset, never a generated replacement icon.
+  const faviconSource = resolve(
+    dirname(fileURLToPath(import.meta.url)),
+    '../assets/favicon.ico'
+  );
+
   try {
-    await writeFile(faviconPath, createFavicon(), { flag: 'wx' });
+    await copyFile(faviconSource, faviconPath, constants.COPYFILE_EXCL);
     console.log('[NgBuild] Created: public/favicon.ico');
   } catch (error) {
     const err = error as NodeJS.ErrnoException;
     if (err.code === 'EEXIST') {
       console.log('[NgBuild] Skipped: public/favicon.ico (already exists)');
+    } else if (err.code === 'ENOENT') {
+      throw new Error('Bundled favicon missing: assets/favicon.ico. Include the original favicon before packing.');
     } else {
       throw error;
     }
@@ -1106,8 +1065,7 @@ Project initialization completed.
 
 Next steps:
 
-  cd ${basename(projectRoot)}
-  npm install
+  ${resolve(projectRoot) === process.cwd() ? '' : 'cd ' + basename(projectRoot) + '\n  '}npm install
   npm run dev
 
 Production build:

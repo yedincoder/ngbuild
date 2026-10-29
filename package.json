@@ -1,7 +1,6 @@
-
 {
   "name": "@yedincoder/ngbuild",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Modern frontend development and build tool",
   "type": "module",
   "bin": {
@@ -9,7 +8,8 @@
   },
   "files": [
     "bin/",
-    "dist/"
+    "dist/",
+    "assets/"
   ],
   "scripts": {
     "dev": "npm run compile && node bin/ngbuild.js dev",
