@@ -2,7 +2,7 @@ import { resolve } from 'node:path';
 import { startServer } from './server.js';
 import { buildProject } from './build.js';
 
-const VERSION = '0.6.0';
+const VERSION = '0.7.0';
 
 const args = process.argv.slice(2);
 

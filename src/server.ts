@@ -1,10 +1,19 @@
 import { createServer, type ServerResponse } from 'node:http';
 import { readFile, realpath, stat, watch } from 'node:fs/promises';
-import { resolve, relative, sep, extname, isAbsolute } from 'node:path';
+import {
+  resolve,
+  relative,
+  sep,
+  extname,
+  isAbsolute,
+  dirname
+} from 'node:path';
 import { build, type Loader } from 'esbuild';
 import { PluginManager } from './plugins/loader.js';
+import { ModuleGraph } from './hmr/graph.js';
+import { HMR_RUNTIME } from './hmr/runtime.js';
 
-const VERSION = '0.6.0';
+const VERSION = '0.7.0';
 
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -26,43 +35,6 @@ const TRANSFORM_LOADERS: Record<string, Loader> = {
   '.jsx': 'jsx'
 };
 
-const HMR_CLIENT = `
-<script type="module">
-  const events = new EventSource('/__ngbuild/events');
-
-  events.addEventListener('css-update', (event) => {
-    const changedFile = event.data.replaceAll('\\\\', '/');
-
-    const stylesheets = document.querySelectorAll(
-      'link[rel="stylesheet"]'
-    );
-
-    for (const link of stylesheets) {
-      const url = new URL(link.href);
-
-      if (
-        url.pathname === '/' + changedFile ||
-        url.pathname.endsWith('/' + changedFile)
-      ) {
-        url.searchParams.set('ngbuild', Date.now().toString());
-        link.href = url.toString();
-
-        console.info('[NgBuild] CSS updated:', changedFile);
-      }
-    }
-  });
-
-  events.addEventListener('reload', () => {
-    console.info('[NgBuild] Reloading...');
-    window.location.reload();
-  });
-
-  events.addEventListener('open', () => {
-    console.info('[NgBuild] HMR connected');
-  });
-</script>
-`;
-
 function isWithin(root: string, filePath: string): boolean {
   const rel = relative(root, filePath);
 
@@ -77,11 +49,54 @@ function isWithin(root: string, filePath: string): boolean {
 }
 
 function injectClient(html: string): string {
-  if (html.includes('</body>')) {
-    return html.replace('</body>', `${HMR_CLIENT}</body>`);
+  if (html.includes('<head>')) {
+    return html.replace(
+      '<head>',
+      `<head>${HMR_RUNTIME}`
+    );
   }
 
-  return html + HMR_CLIENT;
+  return HMR_RUNTIME + html;
+}
+
+function injectHotContext(code: string, browserPath: string): string {
+  const prefix = `
+import.meta.hot = window.__ngbuild_hot?.createContext(
+  ${JSON.stringify(browserPath)}
+);
+`;
+
+  return prefix + code;
+}
+
+function getDependencies(
+  code: string,
+  filePath: string,
+  projectRoot: string
+): string[] {
+  const dependencies = new Set<string>();
+
+  const pattern =
+    /\b(?:import|export)\s+(?:[^'"]*?\s+from\s*)?['"]([^'"]+)['"]/g;
+
+  for (const match of code.matchAll(pattern)) {
+    const specifier = match[1];
+
+    if (!specifier.startsWith('.')) {
+      continue;
+    }
+
+    const dependency = resolve(
+      dirname(filePath),
+      specifier.split(/[?#]/)[0]
+    );
+
+    if (isWithin(projectRoot, dependency)) {
+      dependencies.add(dependency);
+    }
+  }
+
+  return [...dependencies];
 }
 
 async function transformModule(
@@ -129,6 +144,7 @@ export async function startServer(
 ): Promise<void> {
   const projectRoot = await realpath(root);
   const clients = new Set<ServerResponse>();
+  const graph = new ModuleGraph(projectRoot);
 
   const plugins = new PluginManager(
     projectRoot,
@@ -138,18 +154,28 @@ export async function startServer(
   await plugins.load();
   await plugins.buildStart();
 
-  function broadcastReload(): void {
+  function broadcast(event: string, data: string): void {
     for (const client of clients) {
-      client.write('event: reload\ndata: update\n\n');
+      client.write(`event: ${event}\ndata: ${data}\n\n`);
     }
   }
 
-  function broadcastCssUpdate(filename: string): void {
-    const normalized = filename.replace(/\\/g, '/');
+  function broadcastReload(): void {
+    broadcast('reload', 'update');
+  }
 
-    for (const client of clients) {
-      client.write(`event: css-update\ndata: ${normalized}\n\n`);
-    }
+  function broadcastCssUpdate(filename: string): void {
+    broadcast(
+      'css-update',
+      filename.replace(/\\/g, '/')
+    );
+  }
+
+  function broadcastJsUpdate(filename: string): void {
+    broadcast(
+      'js-update',
+      graph.toBrowserPath(filename)
+    );
   }
 
   const server = createServer(async (req, res) => {
@@ -234,6 +260,39 @@ export async function startServer(
         console.log(
           `[NgBuild] Transformed: ${relative(projectRoot, actualPath)}`
         );
+      } else if (
+        extension === '.js' ||
+        extension === '.mjs'
+      ) {
+        const code = await readFile(actualPath, 'utf-8');
+        const browserPath = graph.toBrowserPath(actualPath);
+
+        const transformed = await plugins.transform(
+          code,
+          actualPath
+        );
+
+        const selfAccepting =
+          /\bimport\.meta\.hot\s*\??\.\s*accept\s*\(/.test(
+            transformed
+          );
+
+        graph.updateModule(
+          actualPath,
+          getDependencies(
+            transformed,
+            actualPath,
+            projectRoot
+          ),
+          selfAccepting
+        );
+
+        content = injectHotContext(
+          transformed,
+          browserPath
+        );
+
+        contentType = 'text/javascript; charset=utf-8';
       } else {
         content = await readFile(actualPath);
 
@@ -291,10 +350,12 @@ export async function startServer(
   File Watcher: Active
   Auto Reload:  Active
   CSS Hot Update: Enabled
-  ES Modules:   Native
-  TypeScript:   Enabled
-  JSX / TSX:    Enabled
-  React:        Supported
+  JavaScript HMR: Enabled
+  Module Graph:  Enabled
+  ES Modules:    Native
+  TypeScript:    Enabled
+  JSX / TSX:     Enabled
+  React:         Supported
   Plugin System: Enabled (${plugins.count} loaded)
 
   Press Ctrl+C to stop.
@@ -315,6 +376,7 @@ export async function startServer(
     }
 
     clients.clear();
+    graph.clear();
   });
 
   async function startWatcher(): Promise<void> {
@@ -329,12 +391,12 @@ export async function startServer(
 
       for await (const event of watcher) {
         const filename = event.filename?.toString() ?? '';
-
         const segments = filename.split(/[\\/]/);
 
         if (
           segments.includes('node_modules') ||
-          segments.includes('.git')
+          segments.includes('.git') ||
+          segments.includes('dist')
         ) {
           continue;
         }
@@ -343,11 +405,33 @@ export async function startServer(
           `[NgBuild] File changed: ${filename || 'unknown'}`
         );
 
-        if (filename && extname(filename).toLowerCase() === '.css') {
-          broadcastCssUpdate(filename);
-        } else {
+        if (!filename) {
           broadcastReload();
+          continue;
         }
+
+        const extension = extname(filename).toLowerCase();
+        const changedPath = resolve(projectRoot, filename);
+
+        if (extension === '.css') {
+          broadcastCssUpdate(filename);
+          continue;
+        }
+
+        if (
+          extension === '.js' ||
+          extension === '.mjs'
+        ) {
+          if (graph.isHmrAccepted(changedPath)) {
+            broadcastJsUpdate(changedPath);
+          } else {
+            broadcastReload();
+          }
+
+          continue;
+        }
+
+        broadcastReload();
       }
 
     } catch (error) {

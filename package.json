@@ -1,6 +1,6 @@
 {
   "name": "ngbuild",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Modern frontend development and build tool",
   "type": "module",
   "bin": {"ngbuild": "./bin/ngbuild.js"},
