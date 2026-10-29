@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -7,9 +6,9 @@ function App() {
 
   return (
     <main>
-      <h1>NgBuild v0.3.0</h1>
+      <h1>NgBuild</h1>
 
-      <p>React + TypeScript + TSX berhasil dijalankan!</p>
+      <p>React Fast Refresh Test</p>
 
       <p>Counter: {count}</p>
 

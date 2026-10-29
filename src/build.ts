@@ -21,8 +21,7 @@ import {
 
 import { build, transform } from 'esbuild';
 import { PluginManager } from './plugins/loader.js';
-
-const VERSION = '0.6.0';
+import { VERSION } from './version.js';
 
 const SCRIPT_EXTENSIONS = new Set([
   '.js',

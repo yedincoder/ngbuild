@@ -9,11 +9,133 @@ import {
   dirname
 } from 'node:path';
 import { build, type Loader } from 'esbuild';
+import { transformAsync } from '@babel/core';
+import { createRequire } from 'node:module';
 import { PluginManager } from './plugins/loader.js';
 import { ModuleGraph } from './hmr/graph.js';
 import { HMR_RUNTIME } from './hmr/runtime.js';
+import { VERSION } from './version.js';
 
-const VERSION = '0.7.0';
+const require = createRequire(import.meta.url);
+
+async function createReactRefreshRuntime(): Promise<string> {
+  const result = await build({
+    stdin: {
+      contents: `import RefreshRuntime from 'react-refresh/runtime';
+export default RefreshRuntime;`,
+      resolveDir: dirname(require.resolve('react-refresh/package.json')),
+      sourcefile: 'ngbuild-refresh-runtime.js',
+      loader: 'js'
+    },
+    bundle: true,
+    write: false,
+    format: 'esm',
+    platform: 'browser',
+    target: 'es2022',
+    logLevel: 'silent'
+  });
+  return result.outputFiles![0].text;
+}
+
+async function createReactVendors(): Promise<Map<string, string>> {
+  const resolveDir = dirname(require.resolve('react/package.json'));
+  const entries: Record<string, string> = {
+'react.js': `
+import React from 'react';
+
+export default React;
+
+export const {
+  Children,
+  Component,
+  Fragment,
+  PureComponent,
+  StrictMode,
+  Suspense,
+  cloneElement,
+  createContext,
+  createElement,
+  createRef,
+  forwardRef,
+  isValidElement,
+  lazy,
+  memo,
+  startTransition,
+  useCallback,
+  useContext,
+  useDebugValue,
+  useDeferredValue,
+  useEffect,
+  useId,
+  useImperativeHandle,
+  useInsertionEffect,
+  useLayoutEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  useTransition
+} = React;
+`,
+    'react-dom-client.js': `import { createRoot as originalCreateRoot } from 'react-dom/client';
+export * from 'react-dom/client';
+const roots = window.__ngbuild_react_roots || (window.__ngbuild_react_roots = new WeakMap());
+export function createRoot(container, options) {
+  let root = roots.get(container);
+  if (!root) {
+    root = originalCreateRoot(container, options);
+    roots.set(container, root);
+  }
+  return root;
+}`,
+    'jsx-runtime.js': `
+import jsxRuntime from 'react/jsx-runtime';
+
+export const jsx = jsxRuntime.jsx;
+export const jsxs = jsxRuntime.jsxs;
+export const Fragment = jsxRuntime.Fragment;
+`
+  };
+
+  const result = await build({
+    entryPoints: Object.keys(entries).map(name => ({
+      in: 'ngbuild-vendor:' + name,
+      out: name.replace(/\.js$/, '')
+    })),
+    // Virtual source files are supplied by the plugin below.
+    plugins: [{
+      name: 'ngbuild-react-vendor',
+      setup(buildContext) {
+        buildContext.onResolve({ filter: /^ngbuild-vendor:/ }, args => ({
+          path: args.path,
+          namespace: 'ngbuild-vendor'
+        }));
+        buildContext.onLoad({ filter: /.*/, namespace: 'ngbuild-vendor' }, args => ({
+          contents: entries[args.path.slice('ngbuild-vendor:'.length)],
+          loader: 'js',
+          resolveDir
+        }));
+      }
+    }],
+    bundle: true,
+    splitting: true,
+    write: false,
+    format: 'esm',
+    platform: 'browser',
+    target: 'es2022',
+    outdir: '/ngbuild-vendor',
+    entryNames: '[name]',
+    chunkNames: 'chunks/[name]-[hash]',
+    logLevel: 'silent'
+  });
+
+  const files = new Map<string, string>();
+  for (const file of result.outputFiles ?? []) {
+    files.set(file.path.replace(/\\/g, '/').split('/ngbuild-vendor/')[1], file.text);
+  }
+  return files;
+}
 
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -109,6 +231,7 @@ async function transformModule(
     absWorkingDir: projectRoot,
     outdir: 'out',
     bundle: true,
+    external: ['react', 'react-dom/client', 'react/jsx-runtime', 'react/jsx-dev-runtime'],
     write: false,
     platform: 'browser',
     format: 'esm',
@@ -135,7 +258,27 @@ async function transformModule(
     throw new Error('NgBuild: JavaScript output not found.');
   }
 
-  return output.text;
+  const extension = extname(filePath).toLowerCase();
+  if (extension !== '.tsx' && extension !== '.jsx') {
+    return output.text;
+  }
+
+  const refreshed = await transformAsync(output.text, {
+    babelrc: false,
+    configFile: false,
+    filename: filePath + '.js',
+    plugins: [[require.resolve('react-refresh/babel'), { skipEnvCheck: true }]]
+  });
+
+  const browserPath = '/' + relative(projectRoot, filePath).replace(/\\/g, '/');
+  return `
+const __ngbuildRefresh = window.__ngbuild_refresh;
+window.$RefreshReg$ = (type, id) => {
+  __ngbuildRefresh.register(type, ${JSON.stringify(browserPath)} + ' ' + id);
+};
+${refreshed?.code ?? output.text}
+window.$RefreshReg$ = () => {};
+`;
 }
 
 export async function startServer(
@@ -145,6 +288,8 @@ export async function startServer(
   const projectRoot = await realpath(root);
   const clients = new Set<ServerResponse>();
   const graph = new ModuleGraph(projectRoot);
+  const refreshRuntime = await createReactRefreshRuntime();
+  const reactVendors = await createReactVendors();
 
   const plugins = new PluginManager(
     projectRoot,
@@ -178,6 +323,10 @@ export async function startServer(
     );
   }
 
+  function broadcastReactUpdate(filename: string): void {
+    broadcast('react-update', graph.toBrowserPath(filename));
+  }
+
   const server = createServer(async (req, res) => {
     try {
       if (req.method !== 'GET' && req.method !== 'HEAD') {
@@ -190,6 +339,31 @@ export async function startServer(
         req.url ?? '/',
         'http://localhost'
       ).pathname;
+
+      if (pathname === '/__ngbuild/react-refresh') {
+        res.writeHead(200, {
+          'Content-Type': 'text/javascript; charset=utf-8',
+          'Cache-Control': 'no-cache'
+        });
+        res.end(req.method === 'HEAD' ? undefined : refreshRuntime);
+        return;
+      }
+
+      if (pathname.startsWith('/__ngbuild/vendor/')) {
+        const vendorName = pathname.slice('/__ngbuild/vendor/'.length);
+        const vendorCode = reactVendors.get(vendorName);
+        if (vendorCode === undefined) {
+          res.writeHead(404);
+          res.end('Not Found');
+          return;
+        }
+        res.writeHead(200, {
+          'Content-Type': 'text/javascript; charset=utf-8',
+          'Cache-Control': 'no-cache'
+        });
+        res.end(req.method === 'HEAD' ? undefined : vendorCode);
+        return;
+      }
 
       if (pathname === '/__ngbuild/events') {
         res.writeHead(200, {
@@ -301,7 +475,14 @@ export async function startServer(
           'application/octet-stream';
 
         if (extension === '.html') {
-          content = injectClient(content.toString('utf-8'));
+          const importMap = `<script type="importmap">{"imports":{
+"react":"/__ngbuild/vendor/react.js",
+"react-dom/client":"/__ngbuild/vendor/react-dom-client.js",
+"react/jsx-runtime":"/__ngbuild/vendor/jsx-runtime.js"
+}}</script>`;
+          content = injectClient(content.toString('utf-8').includes('<head>')
+            ? content.toString('utf-8').replace('<head>', '<head>' + importMap)
+            : importMap + content.toString('utf-8'));
         }
       }
 
@@ -356,6 +537,7 @@ export async function startServer(
   TypeScript:    Enabled
   JSX / TSX:     Enabled
   React:         Supported
+  React Refresh: Enabled
   Plugin System: Enabled (${plugins.count} loaded)
 
   Press Ctrl+C to stop.
@@ -415,6 +597,11 @@ export async function startServer(
 
         if (extension === '.css') {
           broadcastCssUpdate(filename);
+          continue;
+        }
+
+        if (extension === '.tsx' || extension === '.jsx') {
+          broadcastReactUpdate(changedPath);
           continue;
         }
 

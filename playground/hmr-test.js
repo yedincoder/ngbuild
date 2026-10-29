@@ -2,7 +2,7 @@ let count = import.meta.hot?.data.count ?? 0;
 
 function render() {
   document.querySelector('#app').innerHTML = `
-    <h1>NgBuild HMR TEST FINAL TESTER 123 tambah 4</h1>
+    <h1>NgBuild HMR TEST FINAL</h1>
     <p>Counter: ${count}</p>
     <button id="increment">Tambah</button>
   `;
