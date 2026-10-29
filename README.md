@@ -19,21 +19,52 @@ NgBuild provides a development server, native ES Modules, TypeScript/JSX/TSX sup
 
 ## Quick start
 
-From your project root, install NgBuild and initialize the current directory:
+NgBuild supports both global and project-local installation. Run `init .` inside the project root you already created; it does **not** create an additional project folder.
+
+### Option 1: Global installation — `ngbuild` directly
+
+Install NgBuild globally once:
 
 ```bash
-npm install -D @yedincoder/ngbuild
-npx ngbuild init .
-npm run dev
+npm install -g @yedincoder/ngbuild
 ```
 
-Open **http://localhost:4178/**.
+Then, from your project root:
+
+```bash
+ngbuild init .
+ngbuild dev
+```
 
 Build for production:
 
 ```bash
-npm run build
+ngbuild build
 ```
+
+The global installation makes the `ngbuild` command available in your terminal through your system `PATH`.
+
+### Option 2: Local installation — `npx ngbuild`
+
+Install NgBuild as a development dependency in the current project:
+
+```bash
+npm install -D @yedincoder/ngbuild
+npx ngbuild init .
+npx ngbuild dev
+```
+
+Build for production:
+
+```bash
+npx ngbuild build
+```
+
+A local installation keeps NgBuild in the project's `node_modules/`. `npx` runs the project's installed CLI without requiring a global install. You can also use `npm run dev` and `npm run build` after initialization because the generated `package.json` provides those scripts.
+
+Both approaches use the **same NgBuild CLI**. Choose one installation method; you do not need to install NgBuild globally and locally just to run it.
+
+Open **http://localhost:4178/** after starting the development server.
 
 The starter is deliberately framework-neutral. NgBuild does **not** require React or any particular frontend framework.
 
@@ -51,7 +82,7 @@ PROJECT_ROOT/
 ├── .gitignore
 ├── node_modules/          # created by npm install
 ├── package-lock.json      # created by npm install
-└── dist/                  # created by npm run build
+└── dist/                  # created by ngbuild build
     ├── index.html
     ├── main.js
     ├── style.css
@@ -91,7 +122,7 @@ The generated manifest also includes `@yedincoder/ngbuild` as a development depe
 | `ngbuild --version` | Print the installed tool version |
 | `ngbuild --help` | Show CLI usage |
 
-When installed as a project dependency, prefer `npm run dev` and `npm run build`.
+Use `ngbuild ...` directly with a global installation, or `npx ngbuild ...` with a project-local installation. `npm run dev` and `npm run build` are the generated package-script commands.
 
 ## Development features
 
@@ -107,11 +138,7 @@ NgBuild is a frontend build tool, **not** an application framework. Framework se
 
 ## Production build
 
-Run:
-
-```bash
-npm run build
-```
+Run `ngbuild build` (global installation) or `npx ngbuild build` (local installation).
 
 NgBuild discovers HTML entries, bundles referenced module scripts with esbuild, minifies HTML, optimizes CSS, and copies public assets. The output directory is always the project-level `dist/` for the current starter layout.
 
