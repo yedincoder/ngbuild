@@ -1,43 +1,77 @@
 # NgBuild
 
+[![npm](https://img.shields.io/npm/v/@yedincoder/ngbuild)](https://www.npmjs.com/package/@yedincoder/ngbuild)
+![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20-green)
+![TypeScript](https://img.shields.io/badge/TypeScript-supported-blue)
+![React](https://img.shields.io/badge/React-supported-61DAFB)
+![License](https://img.shields.io/badge/status-stable-brightgreen)
+
 **A lightweight frontend development and build tool built with Node.js, TypeScript, and esbuild.**
 
 NgBuild provides a development server, native ES Modules, TypeScript/JSX/TSX support, file watching, hot updates, React Fast Refresh, a plugin system, and optimized production builds.
 
-> **Release status:** This README documents the v1.0.1 source currently being tested. The published npm package remains v1.0.0 until v1.0.1 is explicitly published. The `init` command and new starter layout are **not** available in the published v1.0.0 package.
+> **Current npm release:** `@yedincoder/ngbuild` (v1.0.2). The commands below use the npm `latest` release without pinning a version.
 
 ## Requirements
 
 - Node.js **20 or newer**
 - npm
 
-## Quick start (v1.0.1, after publication)
+## Quick start
 
-Create a new project using NgBuild v1.0.1:
+NgBuild supports both global and project-local installation. Run `init .` inside the project root you already created; it does **not** create an additional project folder.
+
+### Option 1: Global installation — `ngbuild` directly
+
+Install NgBuild globally once:
 
 ```bash
-mkdir my-workspace
-cd my-workspace
-npm exec --yes --package=@yedincoder/ngbuild@1.0.1 -- ngbuild init my-app
-cd my-app
-npm install
-npm run dev
+npm install -g @yedincoder/ngbuild
 ```
 
-Open **http://localhost:4178/**.
+Then, from your project root:
+
+```bash
+ngbuild init .
+ngbuild dev
+```
 
 Build for production:
 
 ```bash
-npm run build
+ngbuild build
 ```
+
+The global installation makes the `ngbuild` command available in your terminal through your system `PATH`.
+
+### Option 2: Local installation — `npx ngbuild`
+
+Install NgBuild as a development dependency in the current project:
+
+```bash
+npm install -D @yedincoder/ngbuild
+npx ngbuild init .
+npx ngbuild dev
+```
+
+Build for production:
+
+```bash
+npx ngbuild build
+```
+
+A local installation keeps NgBuild in the project's `node_modules/`. `npx` runs the project's installed CLI without requiring a global install. You can also use `npm run dev` and `npm run build` after initialization because the generated `package.json` provides those scripts.
+
+Both approaches use the **same NgBuild CLI**. Choose one installation method; you do not need to install NgBuild globally and locally just to run it.
+
+Open **http://localhost:4178/** after starting the development server.
 
 The starter is deliberately framework-neutral. NgBuild does **not** require React or any particular frontend framework.
 
 ### Project structure
 
 ```text
-my-app/
+PROJECT_ROOT/
 ├── src/
 │   ├── index.html
 │   ├── main.js
@@ -48,7 +82,7 @@ my-app/
 ├── .gitignore
 ├── node_modules/          # created by npm install
 ├── package-lock.json      # created by npm install
-└── dist/                  # created by npm run build
+└── dist/                  # created by ngbuild build
     ├── index.html
     ├── main.js
     ├── style.css
@@ -60,7 +94,7 @@ my-app/
 - **`dist/`** — optimized production output; generated when you run `build`.
 - **`node_modules/`** — installed dependencies; not part of application source.
 
-The generated `src/index.html` references `./main.js`, `./style.css`, and `/favicon.ico`. The favicon is created automatically in `public/`.
+The generated `src/index.html` references `./main.js`, `./style.css`, and `/favicon.ico`. The favicon is copied from the NgBuild package `assets/favicon.ico` to `public/favicon.ico`, not generated. An existing favicon is not overwritten.
 
 The generated `package.json` includes:
 
@@ -73,22 +107,22 @@ The generated `package.json` includes:
 }
 ```
 
-The generated manifest also includes `@yedincoder/ngbuild` as a development dependency.
+The generated manifest also includes `@yedincoder/ngbuild` as a development dependency. When `package.json` already exists, `init` adds missing `dev` and `build` scripts without replacing existing ones.
 
-**Existing files are never overwritten by `ngbuild init`.** For a clean test, initialize a new directory rather than reusing one from an earlier test.
+**Existing source and favicon files are never overwritten by `ngbuild init`.** Run `ngbuild init .` in your existing project root; no additional project folder is required.
 
 ## Commands
 
 | Command | Description |
 | --- | --- |
-| `ngbuild init [root]` | Generate a frontend starter in the selected directory (v1.0.1) |
+| `ngbuild init [root]` | Generate a frontend starter in the selected directory; use `.` for the current root |
 | `ngbuild dev [root]` | Start the development server (default port **4178**) |
 | `ngbuild dev [root] --port 4200` | Start with a custom port |
 | `ngbuild build [root]` | Generate optimized production output in `<root>/dist/` |
 | `ngbuild --version` | Print the installed tool version |
 | `ngbuild --help` | Show CLI usage |
 
-When installed as a project dependency, prefer `npm run dev` and `npm run build`.
+Use `ngbuild ...` directly with a global installation, or `npx ngbuild ...` with a project-local installation. `npm run dev` and `npm run build` are the generated package-script commands.
 
 ## Development features
 
@@ -104,26 +138,22 @@ NgBuild is a frontend build tool, **not** an application framework. Framework se
 
 ## Production build
 
-Run:
-
-```bash
-npm run build
-```
+Run `ngbuild build` (global installation) or `npx ngbuild build` (local installation).
 
 NgBuild discovers HTML entries, bundles referenced module scripts with esbuild, minifies HTML, optimizes CSS, and copies public assets. The output directory is always the project-level `dist/` for the current starter layout.
 
 For example:
 
 ```text
-my-app/src/index.html   → my-app/dist/index.html
-my-app/src/main.js      → my-app/dist/main.js
-my-app/src/style.css    → my-app/dist/style.css
-my-app/public/favicon.ico → my-app/dist/favicon.ico
+PROJECT_ROOT/src/index.html   → PROJECT_ROOT/dist/index.html
+PROJECT_ROOT/src/main.js      → PROJECT_ROOT/dist/main.js
+PROJECT_ROOT/src/style.css    → PROJECT_ROOT/dist/style.css
+PROJECT_ROOT/public/favicon.ico → PROJECT_ROOT/dist/favicon.ico
 ```
 
 ## Existing projects (v1.0.0 layout)
 
-NgBuild v1.0.1 continues to support projects that keep `index.html` at the project root.
+NgBuild v1.0.2 continues to support projects that keep `index.html` at the project root.
 
 ```text
 existing-project/
@@ -148,25 +178,25 @@ node bin/ngbuild.js build playground
 
 The old layout does not need to be migrated to `src/` to keep using `dev` and `build`.
 
-## Use the current unpublished v1.0.1 source
+## Test from the NgBuild source repository
 
-The new starter can be tested **locally before publishing**. From the NgBuild repository:
+The starter can also be tested directly from local source. From the NgBuild repository:
 
 ```powershell
 cd D:\ngappid-project\ngbuild
 npm install
 npm run compile
-node bin/ngbuild.js init D:\ngappid-project\ngbuild-101-test
-node bin/ngbuild.js dev D:\ngappid-project\ngbuild-101-test
+node bin/ngbuild.js init .\playground-test
+node bin/ngbuild.js dev .\playground-test
 ```
 
 Stop the development server with **Ctrl+C**, then build:
 
 ```powershell
-node bin/ngbuild.js build D:\ngappid-project\ngbuild-101-test
+node bin/ngbuild.js build .\playground-test
 ```
 
-Note: the generated `package.json` uses the version currently reported by the local NgBuild source. Before v1.0.1 is published, `npm install` in a newly generated starter may install the published v1.0.0 package, which does **not** include the new `src/` layout support. For local v1.0.1 testing, use the direct `node bin/ngbuild.js ...` commands above.
+Note: These commands execute the source repository directly. Normal projects should use the Quick start instructions above.
 
 ## Plugin system
 
@@ -179,12 +209,18 @@ NgBuild supports project plugins through the existing plugin loader, including c
 - **CLI executable:** `ngbuild`
 - **Node.js:** `>=20`
 
-## v1.0.1 changes
+## Changelog
+
+### v1.0.2
+
+- Use the original packaged `assets/favicon.ico` when initializing a project; remove generated favicon artwork.
+- Preserve an existing `public/favicon.ico`.
+- Keep the existing project-root behavior and all development/build features.
+
+### v1.0.1
 
 - Added `ngbuild init` to generate a framework-neutral starter project.
 - Starter application files are stored in `src/`.
-- Static assets, including an orange-and-black NG favicon, are stored in `public/`.
+- Static assets, including the project favicon, are stored in `public/`.
 - Production output remains in the top-level `dist/` directory.
 - Development and build commands support the new layout while preserving existing root-level HTML projects.
-
-**Publishing note:** Do not announce v1.0.1 as available on npm until the package has been published and its version verified.
