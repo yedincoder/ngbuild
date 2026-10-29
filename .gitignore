@@ -4,3 +4,6 @@ dist/
 # Private credentials and release archives
 npm_recovery_codes.txt
 *.tgz
+
+# NPM package archives
+*.tgz
