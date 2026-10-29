@@ -312,8 +312,49 @@ export async function startServer(
   port = 4178
 ): Promise<void> {
   const projectRoot = await realpath(root);
+
+  let sourceRoot = projectRoot;
+  try {
+    const rootIndex = await stat(resolve(projectRoot, 'index.html'));
+    if (!rootIndex.isFile()) throw new Error('Invalid root index');
+  } catch {
+    try {
+      const srcIndex = await stat(resolve(projectRoot, 'src', 'index.html'));
+      if (srcIndex.isFile()) sourceRoot = resolve(projectRoot, 'src');
+    } catch {
+      // Existing missing-entry handling remains in place.
+    }
+  }
+  const publicRoot = resolve(projectRoot, 'public');
+  const indexPath = resolve(sourceRoot, 'index.html');
+
+  try {
+    const indexInfo = await stat(indexPath);
+
+    if (!indexInfo.isFile()) {
+      throw new Error('index.html is not a file.');
+    }
+  } catch {
+    console.error(`
+[NgBuild] Cannot start development server.
+
+Reason: index.html not found.
+Project: ${projectRoot}
+
+NgBuild requires an existing frontend project.
+
+Create index.html in your project root,
+then run:
+
+  npx ngbuild dev
+
+`);
+    process.exitCode = 1;
+    return;
+  }
+
   const clients = new Set<ServerResponse>();
-  const graph = new ModuleGraph(projectRoot);
+  const graph = new ModuleGraph(sourceRoot);
   const refreshRuntime = await createReactRefreshRuntime();
   const reactVendors = await createReactVendors();
 
@@ -336,10 +377,11 @@ export async function startServer(
   }
 
   function broadcastCssUpdate(filename: string): void {
-    broadcast(
-      'css-update',
-      filename.replace(/\\/g, '/')
-    );
+    const changedPath = resolve(projectRoot, filename);
+    const cssPath = isWithin(sourceRoot, changedPath)
+      ? relative(sourceRoot, changedPath)
+      : filename;
+    broadcast('css-update', cssPath.replace(/\\/g, '/'));
   }
 
   function broadcastJsUpdate(filename: string): void {
@@ -419,17 +461,40 @@ export async function startServer(
         ? `${decoded}index.html`
         : decoded;
 
-      const filePath = resolve(projectRoot, `.${filename}`);
+      const sourcePath = resolve(sourceRoot, `.${filename}`);
+      const publicPath = resolve(publicRoot, `.${filename}`);
 
-      if (!isWithin(projectRoot, filePath)) {
+      if (!isWithin(sourceRoot, sourcePath)) {
         res.writeHead(403);
         res.end('Forbidden');
         return;
       }
 
-      const actualPath = await realpath(filePath);
+      let actualPath: string;
+      try {
+        actualPath = await realpath(sourcePath);
+      } catch (error) {
+        const err = error as NodeJS.ErrnoException;
+        if (err.code !== 'ENOENT' && err.code !== 'ENOTDIR') throw error;
+        if (!isWithin(publicRoot, publicPath)) {
+          res.writeHead(403);
+          res.end('Forbidden');
+          return;
+        }
+        try {
+          actualPath = await realpath(publicPath);
+        } catch (publicError) {
+          const publicErr = publicError as NodeJS.ErrnoException;
+          if (publicErr.code === 'ENOENT' || publicErr.code === 'ENOTDIR') {
+            res.writeHead(404);
+            res.end('Not Found');
+            return;
+          }
+          throw publicError;
+        }
+      }
 
-      if (!isWithin(projectRoot, actualPath)) {
+      if (!isWithin(sourceRoot, actualPath) && !isWithin(publicRoot, actualPath)) {
         res.writeHead(403);
         res.end('Forbidden');
         return;
@@ -451,14 +516,14 @@ export async function startServer(
       if (TRANSFORM_LOADERS[extension]) {
         content = await transformModule(
           actualPath,
-          projectRoot,
+          sourceRoot,
           plugins
         );
 
         contentType = 'text/javascript; charset=utf-8';
 
         console.log(
-          `[NgBuild] Transformed: ${relative(projectRoot, actualPath)}`
+          `[NgBuild] Transformed: ${relative(sourceRoot, actualPath)}`
         );
       } else if (
         extension === '.js' ||
@@ -482,7 +547,7 @@ export async function startServer(
           getDependencies(
             transformed,
             actualPath,
-            projectRoot
+            sourceRoot
           ),
           selfAccepting
         );

@@ -1,4 +1,3 @@
-
 import {
   cp,
   mkdir,
@@ -429,6 +428,19 @@ export async function buildProject(
     throw new Error('Project root must be a directory.');
   }
 
+  let sourceRoot = projectRoot;
+  try {
+    const rootIndex = await stat(resolve(projectRoot, 'index.html'));
+    if (!rootIndex.isFile()) throw new Error('Invalid root index');
+  } catch {
+    try {
+      const srcIndex = await stat(resolve(projectRoot, 'src', 'index.html'));
+      if (srcIndex.isFile()) sourceRoot = resolve(projectRoot, 'src');
+    } catch {
+      // Existing missing-entry handling remains in place.
+    }
+  }
+
   const outputRoot = join(projectRoot, 'dist');
 
   const plugins = new PluginManager(
@@ -455,7 +467,7 @@ export async function buildProject(
   ]);
 
   const sourceFiles = await getFiles(
-    projectRoot,
+    sourceRoot,
     excluded
   );
 
@@ -481,7 +493,7 @@ export async function buildProject(
   await copyProductionAssets(
     sourceFiles,
     htmlFiles,
-    projectRoot,
+    sourceRoot,
     outputRoot
   );
 
@@ -490,11 +502,26 @@ export async function buildProject(
   for (const htmlFile of htmlFiles) {
     await processHtml(
       htmlFile,
-      projectRoot,
+      sourceRoot,
       outputRoot,
       builtScripts,
       plugins
     );
+  }
+
+  const publicRoot = join(projectRoot, 'public');
+  try {
+    if ((await stat(publicRoot)).isDirectory()) {
+      await cp(publicRoot, outputRoot, {
+        recursive: true,
+        force: true,
+        errorOnExist: false
+      });
+      console.log('[NgBuild] Public assets copied.');
+    }
+  } catch (error) {
+    const err = error as NodeJS.ErrnoException;
+    if (err.code !== 'ENOENT') throw error;
   }
 
   const outputFiles = await getFiles(outputRoot);
