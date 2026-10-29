@@ -1,19 +1,22 @@
-
 # NgBuild
 
 **A lightweight frontend development and build tool built with Node.js and TypeScript.**
 
-![Version](https://img.shields.io/badge/version-0.9.0-orange)
+[![npm version](https://img.shields.io/npm/v/@yedincoder/ngbuild)](https://www.npmjs.com/package/@yedincoder/ngbuild)
 ![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20-green)
 ![TypeScript](https://img.shields.io/badge/TypeScript-supported-blue)
 ![React](https://img.shields.io/badge/React-supported-61DAFB)
-![Status](https://img.shields.io/badge/status-pre--release-yellow)
+![Status](https://img.shields.io/badge/status-stable-brightgreen)
 
-NgBuild adalah frontend development tool independen berbasis Node.js dan TypeScript untuk mengembangkan dan membangun aplikasi web menggunakan native ES Modules, TypeScript, JSX, dan TSX tanpa bergantung pada Vite.
+NgBuild adalah frontend development dan build tool independen berbasis Node.js dan TypeScript, menggunakan native ES Modules, esbuild, React, dan Plugin System tanpa bergantung pada Vite.
 
-NgBuild menyediakan CLI, HTTP Development Server, File Watcher, Auto Reload, CSS Hot Update, TypeScript Transformer, Production Bundler berbasis esbuild, React Support, Plugin System, Module Graph, JavaScript HMR, React Fast Refresh, HTML Minification, Production Build Optimization, dan JavaScript HMR Dependency Propagation.
+**Current Version:** v1.0.0 — Stable Release
 
-> **Development Status:** NgBuild v0.9.0 telah menyelesaikan pengujian fitur utama, production build, dan instalasi package lokal pada project eksternal. Versi ini masih dalam tahap pre-release dan belum dinyatakan sebagai rilis stabil v1.0.0.
+**npm:** https://www.npmjs.com/package/@yedincoder/ngbuild
+
+**GitHub:** https://github.com/yedincoder/ngbuild
+
+**Release:** https://github.com/yedincoder/ngbuild/releases/tag/v1.0.0
 
 ## Features
 
@@ -44,51 +47,78 @@ NgBuild menyediakan CLI, HTTP Development Server, File Watcher, Auto Reload, CSS
 - npm.
 - Windows, Linux, atau macOS dengan dukungan file watching sesuai platform.
 
+
 ## Installation
+
+### Install from npm
+
+NgBuild v1.0.0 tersedia secara publik di npm registry.
+
+```bash
+npm install --save-dev @yedincoder/ngbuild
+```
+
+### Verify Installation
+
+```bash
+npx ngbuild --version
+```
+
+Output:
+
+```text
+NgBuild v1.0.0
+```
+
+### Start Development Server
+
+```bash
+npx ngbuild dev
+```
+
+Default URL:
+
+```text
+http://localhost:4178/
+```
+
+Custom port:
+
+```bash
+npx ngbuild dev --port 4205
+```
+
+### Production Build
+
+```bash
+npx ngbuild build
+```
+
+Output disimpan ke folder `dist/` pada project.
 
 ### Development from Source
 
-Clone repository:
+Untuk berkontribusi atau mengembangkan NgBuild:
 
 ```bash
 git clone https://github.com/yedincoder/ngbuild.git
 cd ngbuild
 npm install
 npm run compile
+npm run playground
 ```
 
-### Local Package Installation
+### Package Naming
 
-NgBuild dapat diuji sebagai package lokal tanpa melakukan publikasi ke npm registry.
+Nama resmi package di npm:
 
-Contoh struktur:
+`@yedincoder/ngbuild`
 
-```text
-ngappid-project/
-├── ngbuild/
-└── ngbuild-test/
-```
+Nama executable CLI:
 
-Dari folder `ngbuild-test`:
+`ngbuild`
 
-```bash
-npm install -D ../ngbuild
-```
-
-Pada Windows PowerShell:
-
-```powershell
-npm install -D ..\ngbuild
-```
-
-Verifikasi:
-
-```bash
-npx ngbuild --version
-npx ngbuild --help
-```
-
-> **Catatan:** Nama `ngbuild` juga ditemukan sebagai package pada npm registry. Perintah `npm install -D ngbuild` tidak boleh diasumsikan menginstal source NgBuild dari repository ini. Untuk pengujian versi lokal, gunakan path folder atau file tarball yang dihasilkan dari repository.
+Gunakan package scoped resmi untuk menghindari konflik dengan package lain bernama `ngbuild`.
 
 ## Quick Start
 
@@ -1047,7 +1077,7 @@ Versi dependency mengikuti `package.json` dan lockfile project.
 | v0.7.0 | JavaScript HMR & Module Graph | Tested |
 | v0.8.0 | React Fast Refresh | Tested |
 | v0.9.0 | HTML Minification, Production Build Optimization & HMR Dependency Propagation | Tested |
-| v1.0.0 | Release Stabilization & Package Readiness | Planned |
+| v1.0.0 | Stable Release, npm Publishing & Package Distribution | Released |
 
 ## Current Limitations
 
