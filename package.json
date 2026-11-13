@@ -1,7 +1,32 @@
 {
   "name": "@yedincoder/ngbuild",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Modern frontend development and build tool",
+  "license": "Apache-2.0",
+  "author": {
+    "name": "YedinCoder",
+    "url": "https://github.com/yedincoder"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yedincoder/ngbuild.git"
+  },
+  "homepage": "https://github.com/yedincoder/ngbuild#readme",
+  "bugs": {
+    "url": "https://github.com/yedincoder/ngbuild/issues"
+  },
+  "keywords": [
+    "build-tool",
+    "bundler",
+    "dev-server",
+    "hmr",
+    "hot-module-replacement",
+    "esbuild",
+    "typescript",
+    "javascript",
+    "frontend",
+    "cli"
+  ],
   "type": "module",
   "bin": {
     "ngbuild": "bin/ngbuild.js"
@@ -9,12 +34,15 @@
   "files": [
     "bin/",
     "dist/",
-    "assets/"
+    "assets/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "dev": "npm run compile && node bin/ngbuild.js dev",
     "compile": "tsc",
-    "build": "tsc",
+    "build": "npm run compile",
     "playground": "npm run compile && node bin/ngbuild.js dev playground",
     "prepack": "npm run compile"
   },
@@ -22,12 +50,22 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@babel/core": "^8.0.9",
+    "@babel/core": "^8.1.2",
     "esbuild": "^0.28.2",
     "html-minifier-terser": "^7.2.0",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1",
     "react-refresh": "^0.18.0"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/babel__core": "^7.20.5",

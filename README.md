@@ -1,5 +1,6 @@
 # NgBuild
 
+[![CI](https://github.com/yedincoder/ngbuild/actions/workflows/ci.yml/badge.svg)](https://github.com/yedincoder/ngbuild/actions)
 [![npm Version](https://img.shields.io/npm/v/@yedincoder/ngbuild?logo=npm)](https://www.npmjs.com/package/@yedincoder/ngbuild)
 [![npm Downloads](https://img.shields.io/npm/dm/@yedincoder/ngbuild?logo=npm)](https://www.npmjs.com/package/@yedincoder/ngbuild)
 [![License](https://img.shields.io/npm/l/@yedincoder/ngbuild)](https://www.npmjs.com/package/@yedincoder/ngbuild)
@@ -147,13 +148,13 @@ NgBuild discovers HTML entries, bundles referenced module scripts with esbuild, 
 For example:
 
 ```text
-PROJECT_ROOT/src/index.html   → PROJECT_ROOT/dist/index.html
-PROJECT_ROOT/src/main.js      → PROJECT_ROOT/dist/main.js
-PROJECT_ROOT/src/style.css    → PROJECT_ROOT/dist/style.css
+PROJECT_ROOT/src/index.html     → PROJECT_ROOT/dist/index.html
+PROJECT_ROOT/src/main.js        → PROJECT_ROOT/dist/main.js
+PROJECT_ROOT/src/style.css      → PROJECT_ROOT/dist/style.css
 PROJECT_ROOT/public/favicon.ico → PROJECT_ROOT/dist/favicon.ico
 ```
 
-## Existing projects (v1.0.0 layout)
+## Legacy project layout (pre-v1.0.2)
 
 NgBuild v1.0.2 continues to support projects that keep `index.html` at the project root.
 
@@ -185,7 +186,7 @@ The old layout does not need to be migrated to `src/` to keep using `dev` and `b
 The starter can also be tested directly from local source. From the NgBuild repository:
 
 ```powershell
-cd D:\ngappid-project\ngbuild
+cd path\to\ngbuild
 npm install
 npm run compile
 node bin/ngbuild.js init .\playground-test
@@ -198,7 +199,7 @@ Stop the development server with **Ctrl+C**, then build:
 node bin/ngbuild.js build .\playground-test
 ```
 
-Note: These commands execute the source repository directly. Normal projects should use the Quick start instructions above.
+> **Note:** These commands execute the source repository directly. Normal projects should use the Quick start instructions above.
 
 ## Plugin system
 
@@ -213,12 +214,12 @@ NgBuild supports project plugins through the existing plugin loader, including c
 
 ## NgBuild Ecosystem
 
-NgBuild memiliki dua komponen yang berbeda:
+NgBuild has two separate components:
 
-- **NgBuild Framework** — package `@yedincoder/ngbuildframework`, framework modular untuk Web, API, dan Mobile. Versi lokal yang diuji: `1.0.0`. Belum dipublikasikan ke npm.
-- **NgBuild Build Tool & CLI** — package `@yedincoder/ngbuild`, build tool terpisah. Versi yang diuji: `1.0.2`.
+- **NgBuild Framework** — package `@yedincoder/ngbuildframework`, a modular framework for Web, API, and Mobile. npm version: `1.0.0`.
+- **NgBuild Build Tool & CLI** — package `@yedincoder/ngbuild`, a separate build tool. npm version: `1.0.2`.
 
-Integrasi CLI, package exports, dan starter templates sudah melalui pengujian otomatis. Publikasi dan release terpisah dari penyelesaian fondasi.
+CLI integration, package exports, and starter templates have been covered by automated tests.
 
 ## Author
 
@@ -228,8 +229,7 @@ NgBuild
 
 ## License
 
-NgBuild Framework is open-source software licensed under the
-Apache License, Version 2.0.
+NgBuild Build Tool & CLI is open-source software licensed under the Apache License, Version 2.0.
 
 Copyright © 2026 YedinCoder.
 
@@ -237,7 +237,7 @@ See [LICENSE](LICENSE) for the full license terms.
 
 ---
 
-**NgBuild **
+**NgBuild**
 
 **Modern JavaScript & TypeScript Build Tool.**
 

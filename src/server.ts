@@ -18,30 +18,43 @@ import { VERSION } from './version.js';
 
 const require = createRequire(import.meta.url);
 
-async function createReactRefreshRuntime(): Promise<string> {
-  const result = await build({
-    stdin: {
-      contents: `import RefreshRuntime from 'react-refresh/runtime';
+async function createReactRefreshRuntime(projectRoot: string): Promise<string | null> {
+  try {
+    const refreshDir = dirname(
+      require.resolve('react-refresh/package.json')
+    );
+    const result = await build({
+      stdin: {
+        contents: `import RefreshRuntime from 'react-refresh/runtime';
 export default RefreshRuntime;`,
-      resolveDir: dirname(require.resolve('react-refresh/package.json')),
-      sourcefile: 'ngbuild-refresh-runtime.js',
-      loader: 'js'
-    },
-    bundle: true,
-    write: false,
-    format: 'esm',
-    platform: 'browser',
-    target: 'es2022',
-    logLevel: 'silent'
-  });
-  return result.outputFiles![0].text;
+        resolveDir: refreshDir,
+        sourcefile: 'ngbuild-refresh-runtime.js',
+        loader: 'js'
+      },
+      bundle: true,
+      write: false,
+      format: 'esm',
+      platform: 'browser',
+      target: 'es2022',
+      logLevel: 'silent'
+    });
+    return result.outputFiles![0].text;
+  } catch {
+    return null;
+  }
 }
 
-async function createReactVendors(): Promise<Map<string, string>> {
-  const resolveDir = dirname(require.resolve('react/package.json'));
+async function createReactVendors(projectRoot: string): Promise<Map<string, string> | null> {
+  let resolveDir: string;
+  try {
+    resolveDir = dirname(
+      require.resolve('react/package.json', { paths: [projectRoot] })
+    );
+  } catch {
+    return null;
+  }
   const entries: Record<string, string> = {
 'react.js': `
-import React from 'react';
 
 export default React;
 
@@ -355,8 +368,8 @@ then run:
 
   const clients = new Set<ServerResponse>();
   const graph = new ModuleGraph(sourceRoot);
-  const refreshRuntime = await createReactRefreshRuntime();
-  const reactVendors = await createReactVendors();
+  const refreshRuntime = await createReactRefreshRuntime(projectRoot);
+  const reactVendors = await createReactVendors(projectRoot);
 
   const plugins = new PluginManager(
     projectRoot,
@@ -409,6 +422,11 @@ then run:
       ).pathname;
 
       if (pathname === '/__ngbuild/react-refresh') {
+        if (refreshRuntime === null) {
+          res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res.end('React Refresh not available (react-refresh not installed in project)');
+          return;
+        }
         res.writeHead(200, {
           'Content-Type': 'text/javascript; charset=utf-8',
           'Cache-Control': 'no-cache'
@@ -418,6 +436,11 @@ then run:
       }
 
       if (pathname.startsWith('/__ngbuild/vendor/')) {
+        if (reactVendors === null) {
+          res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res.end('React vendors not available (react/react-dom not installed in project)');
+          return;
+        }
         const vendorName = pathname.slice('/__ngbuild/vendor/'.length);
         const vendorCode = reactVendors.get(vendorName);
         if (vendorCode === undefined) {
@@ -572,14 +595,17 @@ then run:
           'application/octet-stream';
 
         if (extension === '.html') {
-          const importMap = `<script type="importmap">{"imports":{
+          const htmlStr = content.toString('utf-8');
+          const importMap = reactVendors !== null
+            ? `<script type="importmap">{"imports":{
 "react":"/__ngbuild/vendor/react.js",
 "react-dom/client":"/__ngbuild/vendor/react-dom-client.js",
 "react/jsx-runtime":"/__ngbuild/vendor/jsx-runtime.js"
-}}</script>`;
-          content = injectClient(content.toString('utf-8').includes('<head>')
-            ? content.toString('utf-8').replace('<head>', '<head>' + importMap)
-            : importMap + content.toString('utf-8'));
+}}</script>`
+            : '';
+          content = injectClient(htmlStr.includes('<head>')
+            ? htmlStr.replace('<head>', '<head>' + importMap)
+            : importMap + htmlStr);
         }
       }
 
@@ -619,6 +645,8 @@ then run:
   });
 
   server.listen(port, '127.0.0.1', () => {
+    const reactStatus = reactVendors !== null ? 'Supported' : 'Not installed';
+    const refreshStatus = refreshRuntime !== null ? 'Enabled' : 'Not available';
     console.log(`
   NgBuild v${VERSION}
 
@@ -633,8 +661,8 @@ then run:
   ES Modules:    Native
   TypeScript:    Enabled
   JSX / TSX:     Enabled
-  React:         Supported
-  React Refresh: Enabled
+  React:         ${reactStatus}
+  React Refresh: ${refreshStatus}
   Plugin System: Enabled (${plugins.count} loaded)
 
   Press Ctrl+C to stop.
