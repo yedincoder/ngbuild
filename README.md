@@ -1,9 +1,10 @@
 # NgBuild
 
-[![CI](https://github.com/yedincoder/ngbuild/actions/workflows/ci.yml/badge.svg)](https://github.com/yedincoder/ngbuild/actions)
 [![npm Version](https://img.shields.io/npm/v/@yedincoder/ngbuild?logo=npm)](https://www.npmjs.com/package/@yedincoder/ngbuild)
 [![npm Downloads](https://img.shields.io/npm/dm/@yedincoder/ngbuild?logo=npm)](https://www.npmjs.com/package/@yedincoder/ngbuild)
-[![License](https://img.shields.io/npm/l/@yedincoder/ngbuild)](https://www.npmjs.com/package/@yedincoder/ngbuild)
+[![License](https://img.shields.io/npm/l/@yedincoder/ngbuild)](LICENSE)
+[![GitHub Release](https://img.shields.io/github/v/release/yedincoder/ngbuild?logo=github)](https://github.com/yedincoder/ngbuild/releases)
+[![GitHub Issues](https://img.shields.io/github/issues/yedincoder/ngbuild?logo=github)](https://github.com/yedincoder/ngbuild/issues)
 [![Node.js](https://img.shields.io/badge/Node.js-Supported-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Supported-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
